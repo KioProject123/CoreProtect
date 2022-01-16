@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import net.coreprotect.ItemCN;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -905,7 +906,7 @@ public class LookupCommand {
                                                             action = "a:container";
                                                         }
 
-                                                        Chat.sendComponent(player2, timeago + " " + tag + " " + Phrase.build(phrase, Color.DARK_AQUA + rbd + dplayer + Color.WHITE + rbd, "x" + amount, Color.DARK_AQUA + rbd + dname + Color.WHITE, selector));
+                                                        Chat.sendComponent(player2, timeago + " " + tag + " " + Phrase.build(phrase, Color.DARK_AQUA + rbd + dplayer + Color.WHITE + rbd, "x" + amount, Color.DARK_AQUA + rbd + ItemCN.getItemCN(dname) + Color.WHITE, selector));
                                                     }
                                                     else {
                                                         if (daction == 2 || daction == 3) {
@@ -919,7 +920,7 @@ public class LookupCommand {
                                                         }
 
                                                         // tag = ChatColors.RED + "-";
-                                                        Chat.sendComponent(player2, timeago + " " + tag + " " + Phrase.build(phrase, Color.DARK_AQUA + rbd + dplayer + Color.WHITE + rbd, Color.DARK_AQUA + rbd + dname + Color.WHITE, selector));
+                                                        Chat.sendComponent(player2, timeago + " " + tag + " " + Phrase.build(phrase, Color.DARK_AQUA + rbd + dplayer + Color.WHITE + rbd, Color.DARK_AQUA + rbd + ItemCN.getItemCN(dname) + Color.WHITE, selector));
                                                     }
 
                                                     boolean itemLookup = finalArgAction.contains(4) && finalArgAction.contains(11);

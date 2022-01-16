@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Locale;
 
+import net.coreprotect.ItemCN;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
@@ -107,7 +108,7 @@ public class InteractionLookup {
                     target = target.split(":")[1];
                 }
 
-                resultBuilder.append(timeAgo + " " + Color.WHITE + "- ").append(Phrase.build(Phrase.LOOKUP_INTERACTION, Color.DARK_AQUA + rbFormat + resultUser + Color.WHITE + rbFormat, Color.DARK_AQUA + rbFormat + target + Color.WHITE, Selector.FIRST)).append("\n");
+                resultBuilder.append(timeAgo + " " + Color.WHITE + "- ").append(Phrase.build(Phrase.LOOKUP_INTERACTION, Color.DARK_AQUA + rbFormat + resultUser + Color.WHITE + rbFormat, Color.DARK_AQUA + rbFormat + ItemCN.getItemCN(target) + Color.WHITE, Selector.FIRST)).append("\n");
             }
             result = resultBuilder.toString();
             results.close();

@@ -4,6 +4,7 @@ import java.io.File;
 
 import org.bstats.bukkit.MetricsLite;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -22,6 +23,7 @@ import net.coreprotect.thread.NetworkHandler;
 import net.coreprotect.utility.Chat;
 import net.coreprotect.utility.Color;
 import net.coreprotect.utility.Util;
+import org.jetbrains.annotations.NotNull;
 
 public final class CoreProtect extends JavaPlugin {
 
@@ -114,6 +116,17 @@ public final class CoreProtect extends JavaPlugin {
             catch (Exception e) {
                 // Failed to connect to bStats server or something else went wrong.
             }
+
+            // 加载物品中文名的配置文件
+            final File file = new File(getDataFolder(), "itemCN.yml");
+            try {
+                if (!file.exists()) {
+                    saveResource("itemCN.yml", false);
+                }
+            } catch (final @NotNull NullPointerException ignore) {
+                saveResource("itemCN.yml", false);
+            }
+            new ItemCN().loadItemCN(YamlConfiguration.loadConfiguration(file));
         }
         else {
             Chat.console(Phrase.build(Phrase.ENABLE_FAILED, ConfigHandler.EDITION_NAME));
