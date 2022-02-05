@@ -931,7 +931,7 @@ public class LookupCommand {
                                                         }
 
                                                         // tag = ChatColors.RED + "-";
-                                                        Chat.sendComponent(player2, timeago + " " + tag + " " + Phrase.build(phrase, Color.DARK_AQUA + rbd + dplayer + Color.WHITE + rbd, Color.DARK_AQUA + rbd + ItemCN.getItemCN(dname) + Color.WHITE, selector));
+                                                        Chat.sendComponent(player2, timeago + " " + tag + " " + Phrase.build(phrase, Color.DARK_AQUA + rbd + dplayer + Color.WHITE + rbd, Color.DARK_AQUA + rbd + (daction == 3 ? ItemCN.getEntityCN(dname) : ItemCN.getItemCN(dname)) + Color.WHITE, selector));
                                                     }
 
                                                     boolean itemLookup = finalArgAction.contains(4) && finalArgAction.contains(11);
