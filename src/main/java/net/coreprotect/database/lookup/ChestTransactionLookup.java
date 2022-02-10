@@ -96,6 +96,7 @@ public class ChestTransactionLookup {
                 found = true;
 
                 String selector = (resultAction != 0 ? Selector.FIRST : Selector.SECOND);
+                String tag = (resultAction != 0 ? Color.GREEN + "+" : Color.RED + "-");
                 String rbFormat = "";
                 if (resultRolledBack == 1) {
                     rbFormat = Color.STRIKETHROUGH;
@@ -116,7 +117,7 @@ public class ChestTransactionLookup {
                     target = target.split(":")[1];
                 }
 
-                resultBuilder.append(timeAgo + " " + Color.WHITE + "- ").append(Phrase.build(Phrase.LOOKUP_CONTAINER, Color.DARK_AQUA + rbFormat + resultUser + Color.WHITE + rbFormat, "x" + resultAmount, Color.DARK_AQUA + rbFormat + ItemCN.getItemCN(target) + Color.WHITE, selector)).append("\n");
+                resultBuilder.append(timeAgo + " " + tag + " ").append(Phrase.build(Phrase.LOOKUP_CONTAINER, Color.DARK_AQUA + rbFormat + resultUser + Color.WHITE + rbFormat, "x" + resultAmount, Color.DARK_AQUA + rbFormat + ItemCN.getItemCN(target) + Color.WHITE, selector)).append("\n");
             }
             result = resultBuilder.toString();
             results.close();
@@ -124,7 +125,7 @@ public class ChestTransactionLookup {
             if (found) {
                 if (count > limit) {
                     String pageInfo = Color.WHITE + "-----\n";
-                    pageInfo = pageInfo + Util.getPageNavigation(command, page, totalPages) + "| " + Phrase.build(Phrase.LOOKUP_VIEW_PAGE, Color.WHITE, "/co l <page>") + "\n";
+                    pageInfo = pageInfo + Util.getPageNavigation(command, page, totalPages) + "\n";
                     result = result + pageInfo;
                 }
             }
