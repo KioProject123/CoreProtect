@@ -944,11 +944,13 @@ public class LookupCommand {
                                                         if (daction == 2 || daction == 3) {
                                                             phrase = Phrase.LOOKUP_INTERACTION; // {clicked|killed}
                                                             selector = (daction != 3 ? Selector.FIRST : Selector.SECOND);
+                                                            tag = (daction != 3 ? Color.WHITE + "-" : Color.RED + "-");
                                                             action = (daction == 2 ? "a:click" : "a:kill");
                                                         }
                                                         else {
                                                             phrase = Phrase.LOOKUP_BLOCK; // {placed|broke}
                                                             selector = (daction != 0 ? Selector.FIRST : Selector.SECOND);
+                                                            tag = (daction != 0 ? Color.GREEN + "+" : Color.RED + "-");
                                                         }
 
                                                         Chat.sendComponent(player2, timeago + " " + tag + " " + Phrase.build(phrase, Color.DARK_AQUA + rbd + dplayer + Color.WHITE + rbd, Color.DARK_AQUA + rbd + (daction == 3 ? ItemCN.getEntityCN(dname) : ItemCN.getItemCN(dname)) + Color.WHITE, selector));
