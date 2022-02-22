@@ -38,6 +38,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.BlockInventoryHolder;
@@ -400,7 +401,7 @@ public class Util extends Queue {
     }
 
     public static void mergeItems(Material material, ItemStack[] items) {
-        if (material != null && material.equals(Material.ARMOR_STAND)) {
+        if (material != null && (material.equals(Material.ARMOR_STAND) || BukkitAdapter.ADAPTER.isItemFrame(material))) {
             return;
         }
         try {
@@ -451,6 +452,15 @@ public class Util extends Queue {
                 }
                 string = String.join(",", blockDataArray);
             }
+            else if (!string.contains(":") && (material == Material.PAINTING || BukkitAdapter.ADAPTER.isItemFrame(material))) {
+                int id = getBlockdataId(string, true);
+                if (id > -1) {
+                    string = Integer.toString(id);
+                }
+                else {
+                    return result;
+                }
+            }
             else {
                 return result;
             }
@@ -483,7 +493,13 @@ public class Util extends Queue {
                             blockDataArray.add(block);
                         }
                     }
-                    result = NAMESPACE + material.name().toLowerCase(Locale.ROOT) + "[" + String.join(",", blockDataArray) + "]";
+
+                    if (material == Material.PAINTING || BukkitAdapter.ADAPTER.isItemFrame(material)) {
+                        result = String.join(",", blockDataArray);
+                    }
+                    else {
+                        result = NAMESPACE + material.name().toLowerCase(Locale.ROOT) + "[" + String.join(",", blockDataArray) + "]";
+                    }
                 }
                 else {
                     result = "";
@@ -666,12 +682,16 @@ public class Util extends Queue {
                     container = location.getBlock();
                 }
 
-                if (type.equals(Material.ARMOR_STAND)) {
+                if (type == Material.ARMOR_STAND) {
                     LivingEntity entity = (LivingEntity) container;
                     EntityEquipment equipment = Util.getEntityEquipment(entity);
                     if (equipment != null) {
                         contents = getArmorStandContents(equipment);
                     }
+                }
+                else if (type == Material.ITEM_FRAME) {
+                    ItemFrame entity = (ItemFrame) container;
+                    contents = Util.getItemFrameItem(entity);
                 }
                 else {
                     Block block = (Block) container;
@@ -680,7 +700,8 @@ public class Util extends Queue {
                         contents = inventory.getContents();
                     }
                 }
-                if (type.equals(Material.ARMOR_STAND)) {
+
+                if (type == Material.ARMOR_STAND || type == Material.ITEM_FRAME) {
                     boolean hasItem = false;
                     for (ItemStack item : contents) {
                         if (item != null && !item.getType().equals(Material.AIR)) {
@@ -738,6 +759,17 @@ public class Util extends Queue {
         return equipment;
     }
 
+    public static ItemStack[] getItemFrameItem(ItemFrame entity) {
+        ItemStack[] contents = null;
+        try {
+            contents = new ItemStack[] { entity.getItem() };
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        return contents;
+    }
+
     public static int getEntityId(EntityType type) {
         return getEntityId(type.name(), true);
     }
@@ -765,10 +797,12 @@ public class Util extends Queue {
         switch (type) {
             case ARMOR_STAND:
                 return Material.ARMOR_STAND;
+            case ITEM_FRAME:
+                return Material.ITEM_FRAME;
             case ENDER_CRYSTAL:
                 return Material.END_CRYSTAL;
             default:
-                return null;
+                return BukkitAdapter.ADAPTER.getFrameType(type);
         }
     }
 
@@ -807,16 +841,6 @@ public class Util extends Queue {
         }
 
         return type;
-    }
-
-    public static int getHangingDelay(Map<String, Integer> hangingDelay, int wid, int x, int y, int z) {
-        String token = wid + "." + x + "." + y + "." + z;
-        int delay = 0;
-        if (hangingDelay.get(token) != null) {
-            delay = hangingDelay.get(token) + 1;
-        }
-        hangingDelay.put(token, delay);
-        return delay;
     }
 
     public static int getItemStackHashCode(ItemStack item) {
@@ -1196,9 +1220,9 @@ public class Util extends Queue {
         return newVersion(convertArray(oldVersionSplit), convertArray(currentVersionSplit));
     }
 
-    public static Map<Integer, Object> serializeItemStackLegacy(ItemStack itemStack, int slot) {
+    public static Map<Integer, Object> serializeItemStackLegacy(ItemStack itemStack, String faceData, int slot) {
         Map<Integer, Object> result = new HashMap<>();
-        Map<String, Object> itemMap = serializeItemStack(itemStack, slot);
+        Map<String, Object> itemMap = serializeItemStack(itemStack, faceData, slot);
         if (itemMap.size() > 1) {
             result.put(0, itemMap.get("0"));
             result.put(1, itemMap.get("1"));
@@ -1221,11 +1245,11 @@ public class Util extends Queue {
         return result;
     }
 
-    public static Map<String, Object> serializeItemStack(ItemStack itemStack, int slot) {
+    public static Map<String, Object> serializeItemStack(ItemStack itemStack, String faceData, int slot) {
         Map<String, Object> itemMap = new HashMap<>();
         if (itemStack != null && !itemStack.getType().equals(Material.AIR)) {
             ItemStack item = itemStack.clone();
-            List<List<Map<String, Object>>> metadata = ItemMetaHandler.seralize(item, null, slot);
+            List<List<Map<String, Object>>> metadata = ItemMetaHandler.seralize(item, null, faceData, slot);
             item.setItemMeta(null);
             itemMap.put("0", item.serialize());
             itemMap.put("1", metadata);
@@ -1245,7 +1269,7 @@ public class Util extends Queue {
             List<List<Map<String, Object>>> metadata = (List<List<Map<String, Object>>>) itemMap.get("1");
 
             Object[] populatedStack = Rollback.populateItemStack(item, metadata);
-            result = (ItemStack) populatedStack[1];
+            result = (ItemStack) populatedStack[2];
         }
 
         return result;
@@ -1274,7 +1298,7 @@ public class Util extends Queue {
                 ItemStack[] inventory = shulkerBox.getSnapshotInventory().getStorageContents();
                 int slot = 0;
                 for (ItemStack itemStack : inventory) {
-                    Map<Integer, Object> itemMap = serializeItemStackLegacy(itemStack, slot);
+                    Map<Integer, Object> itemMap = serializeItemStackLegacy(itemStack, null, slot);
                     if (itemMap.size() > 0) {
                         meta.add(itemMap);
                     }
@@ -1397,4 +1421,29 @@ public class Util extends Queue {
         return result;
     }
 
+    public static int rolledBack(int rolledBack, boolean isInventory) {
+        switch (rolledBack) {
+            case 1: // just block rolled back
+                return isInventory ? 0 : 1;
+            case 2: // just inventory rolled back
+                return isInventory ? 1 : 0;
+            case 3: // block and inventory rolled back
+                return 1;
+            default: // no rollbacks
+                return 0;
+        }
+    }
+
+    public static int toggleRolledBack(int rolledBack, boolean isInventory) {
+        switch (rolledBack) {
+            case 1: // just block rolled back
+                return isInventory ? 3 : 0;
+            case 2: // just inventory rolled back
+                return isInventory ? 0 : 3;
+            case 3: // block and inventory rolled back
+                return isInventory ? 1 : 2;
+            default: // no rollbacks
+                return isInventory ? 2 : 1;
+        }
+    }
 }

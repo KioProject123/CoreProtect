@@ -1098,7 +1098,7 @@ public class CommandHandler implements CommandExecutor {
                     else if (user.hasPermission("coreprotect.restore") && (corecommand.equals("restore") || corecommand.equals("rs") || corecommand.equals("re") || corecommand.equals("undo") || corecommand.equals("apply") || corecommand.equals("cancel"))) {
                         permission = true;
                     }
-                    else if (user.hasPermission("coreprotect.inspect") && (corecommand.equals("i") || corecommand.equals("inspect"))) {
+                    else if (user.hasPermission("coreprotect.inspect") && (corecommand.equals("i") || corecommand.equals("inspect") || corecommand.equals("inspector"))) {
                         permission = true;
                     }
                     else if (user.hasPermission("coreprotect.help") && corecommand.equals("help")) {
@@ -1120,6 +1120,9 @@ public class CommandHandler implements CommandExecutor {
                         permission = true;
                     }
                     else if (user.hasPermission("coreprotect.status") && (corecommand.equals("status") || corecommand.equals("stats") || corecommand.equals("version"))) {
+                        permission = true;
+                    }
+                    else if (user.hasPermission("coreprotect.consumer") && corecommand.equals("consumer")) {
                         permission = true;
                     }
                 }
@@ -1159,6 +1162,9 @@ public class CommandHandler implements CommandExecutor {
                 }
                 else if (corecommand.equals("reload")) {
                     ReloadCommand.runCommand(user, permission, argumentArray);
+                }
+                else if (corecommand.equals("consumer")) {
+                    ConsumerCommand.runCommand(user, permission, argumentArray);
                 }
                 else {
                     Chat.sendMessage(user, Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + Phrase.build(Phrase.COMMAND_NOT_FOUND, Color.WHITE, "/co " + corecommand));

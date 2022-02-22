@@ -21,17 +21,6 @@ public class __2_21_0 {
                 catch (Exception e) {
                     Chat.console(Phrase.build(Phrase.PATCH_SKIP_UPDATE, ConfigHandler.prefix + "item", Selector.FIRST, Selector.FIRST));
                 }
-
-                if (!Patch.continuePatch()) {
-                    return false;
-                }
-
-                try {
-                    statement.executeUpdate("ALTER TABLE " + ConfigHandler.prefix + "container ADD COLUMN rolled_back_inventory tinyint(1) DEFAULT 0;");
-                }
-                catch (Exception e) {
-                    Chat.console(Phrase.build(Phrase.PATCH_SKIP_UPDATE, ConfigHandler.prefix + "container", Selector.FIRST, Selector.FIRST));
-                }
             }
             else {
                 try {
@@ -39,17 +28,6 @@ public class __2_21_0 {
                 }
                 catch (Exception e) {
                     Chat.console(Phrase.build(Phrase.PATCH_SKIP_UPDATE, ConfigHandler.prefix + "item", Selector.FIRST, Selector.FIRST));
-                }
-
-                if (!Patch.continuePatch()) {
-                    return false;
-                }
-
-                try {
-                    statement.executeUpdate("ALTER TABLE " + ConfigHandler.prefix + "container ADD COLUMN rolled_back_inventory INTEGER DEFAULT 0;");
-                }
-                catch (Exception e) {
-                    Chat.console(Phrase.build(Phrase.PATCH_SKIP_UPDATE, ConfigHandler.prefix + "container", Selector.FIRST, Selector.FIRST));
                 }
             }
 
@@ -59,6 +37,7 @@ public class __2_21_0 {
 
             ConfigFile.modifyLine("language.yml", "LOOKUP_VIEW_PAGE: \"To view a page, type \\\"{0}\\\".\"", null);
             ConfigFile.modifyLine("language.yml", "PREVIEW_CONTAINER: \"You can't preview container transactions.\"", null);
+            ConfigFile.sortFile("language.yml");
         }
         catch (Exception e) {
             e.printStackTrace();

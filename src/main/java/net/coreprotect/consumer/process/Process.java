@@ -35,8 +35,6 @@ public class Process {
     public static final int PLAYER_LOGOUT = 15;
     public static final int ENTITY_KILL = 16;
     public static final int ENTITY_SPAWN = 17;
-    public static final int HANGING_REMOVE = 18;
-    public static final int HANGING_SPAWN = 19;
     public static final int NATURAL_BLOCK_BREAK = 20;
     public static final int MATERIAL_INSERT = 21;
     public static final int ART_INSERT = 22;
@@ -46,6 +44,7 @@ public class Process {
     public static final int ITEM_TRANSACTION = 26;
     public static final int INVENTORY_ROLLBACK_UPDATE = 27;
     public static final int INVENTORY_CONTAINER_ROLLBACK_UPDATE = 28;
+    public static final int BLOCK_INVENTORY_ROLLBACK_UPDATE = 29;
 
     public static int lastLockUpdate = 0;
     private static volatile int currentConsumerSize = 0;
@@ -145,7 +144,7 @@ public class Process {
                                     ContainerBreakProcess.process(preparedStmtContainers, i, processId, id, blockType, user, object);
                                     break;
                                 case Process.PLAYER_INTERACTION:
-                                    PlayerInteractionProcess.process(preparedStmtBlocks, i, user, object);
+                                    PlayerInteractionProcess.process(preparedStmtBlocks, i, user, object, blockType);
                                     break;
                                 case Process.CONTAINER_TRANSACTION:
                                     ContainerTransactionProcess.process(preparedStmtContainers, preparedStmtItems, i, processId, id, blockType, forceData, user, object);
@@ -167,6 +166,9 @@ public class Process {
                                     break;
                                 case Process.INVENTORY_CONTAINER_ROLLBACK_UPDATE:
                                     RollbackUpdateProcess.process(statement, processId, id, forceData, 3);
+                                    break;
+                                case Process.BLOCK_INVENTORY_ROLLBACK_UPDATE:
+                                    RollbackUpdateProcess.process(statement, processId, id, forceData, 4);
                                     break;
                                 case Process.WORLD_INSERT:
                                     WorldInsertProcess.process(preparedStmtWorlds, i, statement, object, forceData);
@@ -195,14 +197,8 @@ public class Process {
                                 case Process.ENTITY_SPAWN:
                                     EntitySpawnProcess.process(statement, object, forceData);
                                     break;
-                                case Process.HANGING_REMOVE:
-                                    HangingRemoveProcess.process(object, forceData);
-                                    break;
-                                case Process.HANGING_SPAWN:
-                                    HangingSpawnProcess.process(object, blockType, blockData, forceData);
-                                    break;
                                 case Process.NATURAL_BLOCK_BREAK:
-                                    NaturalBlockBreakProcess.process(statement, preparedStmtBlocks, i, processId, id, user, object, blockType, blockData);
+                                    NaturalBlockBreakProcess.process(statement, preparedStmtBlocks, i, processId, id, user, object, blockType, blockData, (String) data[7]);
                                     break;
                                 case Process.MATERIAL_INSERT:
                                     MaterialInsertProcess.process(preparedStmtMaterials, statement, i, object, forceData);
