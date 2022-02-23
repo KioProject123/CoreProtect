@@ -183,6 +183,12 @@ public class RollbackRestoreCommand {
                     Chat.sendMessage(player, Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + Phrase.build(Phrase.MISSING_ACTION_USER));
                     return;
                 }
+                if (!argExclude.contains(Material.FIRE)) {
+                    argExclude.add(Material.FIRE);
+                }
+                if (!argExclude.contains(Material.WATER)) {
+                    argExclude.add(Material.WATER);
+                }
                 if (!argExcludeUsers.contains("#hopper")) {
                     argExcludeUsers.add("#hopper");
                 }
@@ -418,13 +424,13 @@ public class RollbackRestoreCommand {
                                             }
                                             else {
                                                 Rollback.performRollbackRestore(statement, player2, uuidList, rollbackusers2, rtime, blist, elist, euserlist, finalArgAction, location, radius, stime, restrictWorld, false, verbose, action, finalPreview);
-                                                if (finalPreview < 2) {
-                                                    List<Object> list = new ArrayList<>();
-                                                    list.add(stime);
-                                                    list.add(finalArgs);
-                                                    list.add(locationFinal);
-                                                    ConfigHandler.lastRollback.put(player2.getName(), list);
-                                                }
+                                            }
+                                            if (finalPreview < 2) {
+                                                List<Object> list = new ArrayList<>();
+                                                list.add(stime);
+                                                list.add(finalArgs);
+                                                list.add(locationFinal);
+                                                ConfigHandler.lastRollback.put(player2.getName(), list);
                                             }
                                         }
                                         else {

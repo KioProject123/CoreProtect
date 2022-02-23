@@ -264,6 +264,8 @@ public class LookupCommand {
         }
 
         if (argAction.contains(4) && argAction.contains(11)) { // a:inventory
+            argExclude.add(Material.FIRE);
+            argExclude.add(Material.WATER);
             argExcludeUsers.add("#hopper");
         }
 
@@ -872,7 +874,8 @@ public class LookupCommand {
                                                     int amount = Integer.parseInt(data[10]);
                                                     String rbd = ((Integer.parseInt(data[8]) == 2 || Integer.parseInt(data[8]) == 3) ? Color.STRIKETHROUGH : "");
                                                     String timeago = Util.getTimeSince(Integer.parseInt(time), unixtimestamp, true);
-                                                    String dname = Util.nameFilter(Util.getType(Integer.parseInt(dtype)).name().toLowerCase(Locale.ROOT), ddata);
+                                                    Material blockType = Util.itemFilter(Util.getType(Integer.parseInt(dtype)));
+                                                    String dname = Util.nameFilter(blockType.name().toLowerCase(Locale.ROOT), ddata);
 
                                                     String selector = Selector.FIRST;
                                                     String tag = Color.WHITE + "-";
@@ -883,6 +886,10 @@ public class LookupCommand {
                                                     else if (daction == 4 || daction == 5) { // LOOKUP_STORAGE
                                                         selector = (daction == 4 ? Selector.FIRST : Selector.SECOND);
                                                         tag = (daction == 4 ? Color.GREEN + "+" : Color.RED + "-");
+                                                    }
+                                                    else if (daction == 6 || daction == 7) { // LOOKUP_PROJECTILE
+                                                        selector = Selector.SECOND;
+                                                        tag = Color.RED + "-";
                                                     }
                                                     else { // LOOKUP_CONTAINER
                                                         selector = (daction == 0 ? Selector.FIRST : Selector.SECOND);
@@ -967,6 +974,12 @@ public class LookupCommand {
                                                             phrase = Phrase.LOOKUP_STORAGE; // {deposited|withdrew}
                                                             selector = (daction != 4 ? Selector.FIRST : Selector.SECOND);
                                                             tag = (daction != 4 ? Color.RED + "-" : Color.GREEN + "+");
+                                                            action = "a:item";
+                                                        }
+                                                        else if (daction == 6 || daction == 7) {
+                                                            phrase = Phrase.LOOKUP_PROJECTILE; // {threw|shot}
+                                                            selector = (daction != 7 ? Selector.FIRST : Selector.SECOND);
+                                                            tag = Color.RED + "-";
                                                             action = "a:item";
                                                         }
                                                         else {

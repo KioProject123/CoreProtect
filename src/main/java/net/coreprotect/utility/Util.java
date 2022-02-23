@@ -801,6 +801,16 @@ public class Util extends Queue {
                 return Material.ITEM_FRAME;
             case ENDER_CRYSTAL:
                 return Material.END_CRYSTAL;
+            case ENDER_PEARL:
+                return Material.ENDER_PEARL;
+            case SPLASH_POTION:
+                return Material.SPLASH_POTION;
+            case THROWN_EXP_BOTTLE:
+                return Material.EXPERIENCE_BOTTLE;
+            case TRIDENT:
+                return Material.TRIDENT;
+            case FIREWORK:
+                return Material.FIREWORK_ROCKET;
             default:
                 return BukkitAdapter.ADAPTER.getFrameType(type);
         }
@@ -1093,6 +1103,18 @@ public class Util extends Queue {
     // This theoretically initializes the component code, to prevent gson adapter errors
     public static void sendConsoleComponentStartup(ConsoleCommandSender consoleSender, String string) {
         Chat.sendComponent(consoleSender, Color.RESET + "[CoreProtect] " + string + Chat.COMPONENT_TAG_OPEN + Chat.COMPONENT_POPUP + "| | " + Chat.COMPONENT_TAG_CLOSE);
+    }
+
+    public static Material itemFilter(Material material) {
+        if (material == null) {
+            return material;
+        }
+
+        if (!material.isItem() && material.name().contains("WALL_")) {
+            material = Material.valueOf(material.name().replace("WALL_", ""));
+        }
+
+        return material;
     }
 
     public static String nameFilter(String name, int data) {

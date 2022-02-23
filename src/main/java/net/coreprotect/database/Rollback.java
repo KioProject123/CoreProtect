@@ -1037,6 +1037,7 @@ public class Rollback extends Queue {
                             int rolledBackInventory = Util.rolledBack((Integer) row[9], true);
                             if (rowType != null) {
                                 if (inventoryRollback && ((rollbackType == 0 && rolledBackInventory == 0) || (rollbackType == 1 && rolledBackInventory == 1))) {
+                                    Material inventoryItem = Util.itemFilter(rowType);
                                     int rowUserId = (Integer) row[2];
                                     String rowUser = ConfigHandler.playerIdCacheReversed.get(rowUserId);
                                     if (rowUser == null) {
@@ -1054,7 +1055,7 @@ public class Rollback extends Queue {
                                     }
 
                                     int inventoryAction = 0;
-                                    if (rowAction == ItemLogger.ITEM_DROP || rowAction == ItemLogger.ITEM_PICKUP) {
+                                    if (rowAction == ItemLogger.ITEM_DROP || rowAction == ItemLogger.ITEM_PICKUP || rowAction == ItemLogger.ITEM_THROW || rowAction == ItemLogger.ITEM_SHOOT) {
                                         inventoryAction = (rowAction == ItemLogger.ITEM_PICKUP ? 1 : 0);
                                     }
                                     else if (rowAction == ItemLogger.ITEM_REMOVE_ENDER || rowAction == ItemLogger.ITEM_ADD_ENDER) {
@@ -1065,7 +1066,7 @@ public class Rollback extends Queue {
                                     }
 
                                     int action = rollbackType == 0 ? (inventoryAction ^ 1) : inventoryAction;
-                                    ItemStack itemstack = new ItemStack(rowType, rowAmount, (short) rowData);
+                                    ItemStack itemstack = new ItemStack(inventoryItem, rowAmount, (short) rowData);
                                     Object[] populatedStack = populateItemStack(itemstack, rowMetadata);
                                     if (rowAction == ItemLogger.ITEM_REMOVE_ENDER || rowAction == ItemLogger.ITEM_ADD_ENDER) {
                                         modifyContainerItems(containerType, player.getEnderChest(), (Integer) populatedStack[0], ((ItemStack) populatedStack[2]).clone(), action ^ 1);
@@ -1107,7 +1108,6 @@ public class Rollback extends Queue {
                                             containerType = block.getType();
                                         }
                                         else if (BlockGroup.CONTAINERS.contains(Material.ARMOR_STAND) || BlockGroup.CONTAINERS.contains(Material.ITEM_FRAME)) {
-                                            BlockFace blockFace = BlockFace.valueOf(faceData);
                                             for (Entity entity : block.getChunk().getEntities()) {
                                                 if (entity.getLocation().getBlockX() == rowX && entity.getLocation().getBlockY() == rowY && entity.getLocation().getBlockZ() == rowZ) {
                                                     if (entity instanceof ArmorStand) {
@@ -1117,7 +1117,7 @@ public class Rollback extends Queue {
                                                     else if (entity instanceof ItemFrame) {
                                                         container = entity;
                                                         containerType = Material.ITEM_FRAME;
-                                                        if (blockFace == ((ItemFrame) entity).getFacing()) {
+                                                        if (faceData.length() > 0 && (BlockFace.valueOf(faceData) == ((ItemFrame) entity).getFacing())) {
                                                             break;
                                                         }
                                                     }
@@ -1395,8 +1395,14 @@ public class Rollback extends Queue {
 
                 int excludeCount = 0;
                 for (Object excludeTarget : excludeList) {
-                    String targetName = "";
+                    // don't display that excluded water/fire in inventory rollbacks
+                    if (actionList.contains(4) && actionList.contains(11)) {
+                        if (excludeTarget.equals(Material.FIRE) || excludeTarget.equals(Material.WATER)) {
+                            continue;
+                        }
+                    }
 
+                    String targetName = "";
                     if (excludeTarget instanceof Material) {
                         targetName = ((Material) excludeTarget).name().toLowerCase(Locale.ROOT);
                         item = (!item ? !(((Material) excludeTarget).isBlock()) : item);
@@ -1428,7 +1434,9 @@ public class Rollback extends Queue {
                     targetType = Selector.SECOND;
                 }
 
-                Chat.sendMessage(user, Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + Phrase.build(Phrase.ROLLBACK_INCLUDE, excludeTargets.toString(), Selector.SECOND, targetType, (excludeCount == 1 ? Selector.FIRST : Selector.SECOND))); // exclude
+                if (excludeCount > 0) {
+                    Chat.sendMessage(user, Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + Phrase.build(Phrase.ROLLBACK_INCLUDE, excludeTargets.toString(), Selector.SECOND, targetType, (excludeCount == 1 ? Selector.FIRST : Selector.SECOND))); // exclude
+                }
             }
 
             if (excludeUserList.size() > 0) {
@@ -1681,9 +1689,24 @@ public class Rollback extends Queue {
             */
 
             Material rowType = itemstack.getType();
+            List<Object> metaList = (List<Object>) list;
+            if (!(metaList.get(0) instanceof List<?>)) {
+                if (rowType.name().endsWith("_BANNER")) {
+                    BannerMeta meta = (BannerMeta) itemstack.getItemMeta();
+                    for (Object value : metaList) {
+                        if (value instanceof Map) {
+                            Pattern pattern = new Pattern((Map<String, Object>) value);
+                            meta.addPattern(pattern);
+                        }
+                    }
+                    itemstack.setItemMeta(meta);
+                }
+
+                return new Object[] { slot, faceData, itemstack };
+            }
+
             int itemCount = 0;
             Builder effectBuilder = FireworkEffect.builder();
-
             for (List<Map<String, Object>> map : (List<List<Map<String, Object>>>) list) {
                 if (map.size() == 0) {
                     if (itemCount == 3 && (rowType == Material.FIREWORK_ROCKET || rowType == Material.FIREWORK_STAR)) {
