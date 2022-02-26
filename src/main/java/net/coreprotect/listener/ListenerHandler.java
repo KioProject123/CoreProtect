@@ -28,6 +28,7 @@ import net.coreprotect.listener.entity.HangingBreakByEntityListener;
 import net.coreprotect.listener.entity.HangingBreakListener;
 import net.coreprotect.listener.entity.HangingPlaceListener;
 import net.coreprotect.listener.player.ArmorStandManipulateListener;
+import net.coreprotect.listener.player.CraftItemListener;
 import net.coreprotect.listener.player.FoodLevelChangeListener;
 import net.coreprotect.listener.player.InventoryChangeListener;
 import net.coreprotect.listener.player.PlayerBucketEmptyListener;
@@ -38,6 +39,7 @@ import net.coreprotect.listener.player.PlayerDeathListener;
 import net.coreprotect.listener.player.PlayerDropItemListener;
 import net.coreprotect.listener.player.PlayerInteractEntityListener;
 import net.coreprotect.listener.player.PlayerInteractListener;
+import net.coreprotect.listener.player.PlayerItemBreakListener;
 import net.coreprotect.listener.player.PlayerJoinListener;
 import net.coreprotect.listener.player.PlayerQuitListener;
 import net.coreprotect.listener.player.PlayerTakeLecternBookListener;
@@ -83,20 +85,22 @@ public final class ListenerHandler {
         pluginManager.registerEvents(new HangingBreakByEntityListener(), plugin);
 
         // Player Listeners
-        pluginManager.registerEvents(new InventoryChangeListener(), plugin);
         pluginManager.registerEvents(new ArmorStandManipulateListener(), plugin);
+        pluginManager.registerEvents(new CraftItemListener(), plugin);
+        pluginManager.registerEvents(new FoodLevelChangeListener(), plugin);
+        pluginManager.registerEvents(new InventoryChangeListener(), plugin);
         pluginManager.registerEvents(new PlayerBucketEmptyListener(), plugin);
         pluginManager.registerEvents(new PlayerBucketFillListener(), plugin);
         pluginManager.registerEvents(new PlayerCommandListener(), plugin);
         pluginManager.registerEvents(new PlayerDeathListener(), plugin);
         pluginManager.registerEvents(new PlayerDropItemListener(), plugin);
         pluginManager.registerEvents(new PlayerPickupArrowListener(), plugin);
-        pluginManager.registerEvents(new FoodLevelChangeListener(), plugin);
         pluginManager.registerEvents(new PlayerInteractEntityListener(), plugin);
+        pluginManager.registerEvents(new PlayerInteractListener(), plugin);
+        pluginManager.registerEvents(new PlayerItemBreakListener(), plugin);
         pluginManager.registerEvents(new PlayerJoinListener(), plugin);
         pluginManager.registerEvents(new PlayerQuitListener(), plugin);
         pluginManager.registerEvents(new SignChangeListener(), plugin);
-        pluginManager.registerEvents(new PlayerInteractListener(), plugin);
         pluginManager.registerEvents(new PlayerTakeLecternBookListener(), plugin);
         pluginManager.registerEvents(new ProjectileLaunchListener(), plugin);
 

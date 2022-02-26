@@ -32,6 +32,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.CommandBlock;
 import org.bukkit.block.CreatureSpawner;
+import org.bukkit.block.ShulkerBox;
 import org.bukkit.block.banner.Pattern;
 import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.Bisected.Half;
@@ -62,6 +63,7 @@ import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BannerMeta;
+import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.CrossbowMeta;
 import org.bukkit.inventory.meta.FireworkEffectMeta;
 import org.bukkit.inventory.meta.FireworkMeta;
@@ -411,6 +413,9 @@ public class Rollback extends Queue {
                                         }
                                     }
                                 }
+                                else {
+                                    entityCount1++;
+                                }
                             }
                             else if (rowAction == 3) { // entity kill
                                 String world = Util.getWorldName(rowWorldId);
@@ -719,11 +724,18 @@ public class Rollback extends Queue {
                                                     int worldMinHeight = BukkitAdapter.ADAPTER.getMinHeight(bukkitWorld);
                                                     if (bisectLocation.getBlockY() >= worldMinHeight && bisectLocation.getBlockY() < worldMaxHeight) {
                                                         Block bisectBlock = block.getWorld().getBlockAt(bisectLocation);
-                                                        Util.prepareTypeAndData(chunkChanges, bisectBlock, rowType, null, physics);
+                                                        Util.prepareTypeAndData(chunkChanges, bisectBlock, rowType, null, false);
 
                                                         if (countBlock) {
                                                             blockCount1++;
                                                         }
+                                                    }
+                                                }
+                                                else if (changeBlockData instanceof Bed) {
+                                                    Bed bed = (Bed) changeBlockData;
+                                                    if (bed.getPart() == Part.FOOT) {
+                                                        Block adjacentBlock = block.getRelative(bed.getFacing());
+                                                        Util.prepareTypeAndData(chunkChanges, adjacentBlock, rowType, null, false);
                                                     }
                                                 }
 
@@ -817,83 +829,73 @@ public class Rollback extends Queue {
                                         else if ((rowType == Material.NETHER_PORTAL) && rowAction == 0) {
                                             Util.prepareTypeAndData(chunkChanges, block, Material.FIRE, null, true);
                                         }
-                                        else if (rowType == Material.IRON_DOOR || BlockGroup.DOORS.contains(rowType)) {
+                                        else if (blockData == null && rowData > 0 && (rowType == Material.IRON_DOOR || BlockGroup.DOORS.contains(rowType))) {
                                             if (countBlock) {
                                                 blockCount1++;
                                             }
 
-                                            if (blockData != null) {
-                                                Util.prepareTypeAndData(chunkChanges, block, rowType, blockData, false);
+                                            block.setType(rowType, false);
+                                            Door door = (Door) block.getBlockData();
+                                            if (rowData >= 8) {
+                                                door.setHalf(Half.TOP);
+                                                rowData = rowData - 8;
                                             }
                                             else {
-                                                block.setType(rowType, false);
-                                                Door door = (Door) block.getBlockData();
-                                                if (rowData >= 8) {
-                                                    door.setHalf(Half.TOP);
-                                                    rowData = rowData - 8;
-                                                }
-                                                else {
-                                                    door.setHalf(Half.BOTTOM);
-                                                }
-                                                if (rowData >= 4) {
-                                                    door.setHinge(Hinge.RIGHT);
-                                                    rowData = rowData - 4;
-                                                }
-                                                else {
-                                                    door.setHinge(Hinge.LEFT);
-                                                }
-                                                BlockFace face = BlockFace.NORTH;
-
-                                                switch (rowData) {
-                                                    case 0:
-                                                        face = BlockFace.EAST;
-                                                        break;
-                                                    case 1:
-                                                        face = BlockFace.SOUTH;
-                                                        break;
-                                                    case 2:
-                                                        face = BlockFace.WEST;
-                                                        break;
-                                                }
-
-                                                door.setFacing(face);
-                                                door.setOpen(false);
-                                                block.setBlockData(door, false);
+                                                door.setHalf(Half.BOTTOM);
                                             }
+                                            if (rowData >= 4) {
+                                                door.setHinge(Hinge.RIGHT);
+                                                rowData = rowData - 4;
+                                            }
+                                            else {
+                                                door.setHinge(Hinge.LEFT);
+                                            }
+                                            BlockFace face = BlockFace.NORTH;
+
+                                            switch (rowData) {
+                                                case 0:
+                                                    face = BlockFace.EAST;
+                                                    break;
+                                                case 1:
+                                                    face = BlockFace.SOUTH;
+                                                    break;
+                                                case 2:
+                                                    face = BlockFace.WEST;
+                                                    break;
+                                            }
+
+                                            door.setFacing(face);
+                                            door.setOpen(false);
+                                            block.setBlockData(door, false);
                                         }
-                                        else if (rowType.name().endsWith("_BED")) {
+                                        else if (blockData == null && rowData > 0 && (rowType.name().endsWith("_BED"))) {
                                             if (countBlock) {
                                                 blockCount1++;
                                             }
 
-                                            if (blockData != null) {
-                                                Util.prepareTypeAndData(chunkChanges, block, rowType, blockData, false);
+                                            block.setType(rowType, false);
+                                            Bed bed = (Bed) block.getBlockData();
+                                            BlockFace face = BlockFace.NORTH;
+
+                                            if (rowData > 4) {
+                                                bed.setPart(Part.HEAD);
+                                                rowData = rowData - 4;
                                             }
-                                            else {
-                                                block.setType(rowType, false);
-                                                Bed bed = (Bed) block.getBlockData();
-                                                BlockFace face = BlockFace.NORTH;
 
-                                                if (rowData > 4) {
-                                                    bed.setPart(Part.HEAD);
-                                                    rowData = rowData - 4;
-                                                }
-
-                                                switch (rowData) {
-                                                    case 2:
-                                                        face = BlockFace.WEST;
-                                                        break;
-                                                    case 3:
-                                                        face = BlockFace.EAST;
-                                                        break;
-                                                    case 4:
-                                                        face = BlockFace.SOUTH;
-                                                        break;
-                                                }
-
-                                                bed.setFacing(face);
-                                                block.setBlockData(bed, false);
+                                            switch (rowData) {
+                                                case 2:
+                                                    face = BlockFace.WEST;
+                                                    break;
+                                                case 3:
+                                                    face = BlockFace.EAST;
+                                                    break;
+                                                case 4:
+                                                    face = BlockFace.SOUTH;
+                                                    break;
                                             }
+
+                                            bed.setFacing(face);
+                                            block.setBlockData(bed, false);
                                         }
                                         else if (rowType.name().endsWith("_BANNER")) {
                                             Util.prepareTypeAndData(chunkChanges, block, rowType, blockData, false);
@@ -961,6 +963,23 @@ public class Rollback extends Queue {
                                             Util.prepareTypeAndData(chunkChanges, block, rowType, blockData, false);
                                             if (countBlock) {
                                                 blockCount1++;
+                                                blockCount1++;
+                                            }
+                                        }
+                                        else if (rowType != Material.AIR && rawBlockData instanceof Bed) {
+                                            Bed bed = (Bed) rawBlockData;
+                                            if (bed.getPart() == Part.FOOT) {
+                                                Block adjacentBlock = block.getRelative(bed.getFacing());
+                                                Bed bedData = (Bed) rawBlockData.clone();
+                                                bedData.setPart(Part.HEAD);
+                                                Util.prepareTypeAndData(chunkChanges, adjacentBlock, rowType, bedData, false);
+                                                if (countBlock) {
+                                                    blockCount1++;
+                                                }
+                                            }
+
+                                            Util.prepareTypeAndData(chunkChanges, block, rowType, blockData, true);
+                                            if (countBlock) {
                                                 blockCount1++;
                                             }
                                         }
@@ -1037,7 +1056,7 @@ public class Rollback extends Queue {
                             int rolledBackInventory = Util.rolledBack((Integer) row[9], true);
                             if (rowType != null) {
                                 if (inventoryRollback && ((rollbackType == 0 && rolledBackInventory == 0) || (rollbackType == 1 && rolledBackInventory == 1))) {
-                                    Material inventoryItem = Util.itemFilter(rowType);
+                                    Material inventoryItem = Util.itemFilter(rowType, ((Integer) row[14] == 0));
                                     int rowUserId = (Integer) row[2];
                                     String rowUser = ConfigHandler.playerIdCacheReversed.get(rowUserId);
                                     if (rowUser == null) {
@@ -1055,8 +1074,8 @@ public class Rollback extends Queue {
                                     }
 
                                     int inventoryAction = 0;
-                                    if (rowAction == ItemLogger.ITEM_DROP || rowAction == ItemLogger.ITEM_PICKUP || rowAction == ItemLogger.ITEM_THROW || rowAction == ItemLogger.ITEM_SHOOT) {
-                                        inventoryAction = (rowAction == ItemLogger.ITEM_PICKUP ? 1 : 0);
+                                    if (rowAction == ItemLogger.ITEM_DROP || rowAction == ItemLogger.ITEM_PICKUP || rowAction == ItemLogger.ITEM_THROW || rowAction == ItemLogger.ITEM_SHOOT || rowAction == ItemLogger.ITEM_BREAK || rowAction == ItemLogger.ITEM_DESTROY || rowAction == ItemLogger.ITEM_CREATE) {
+                                        inventoryAction = ((rowAction == ItemLogger.ITEM_PICKUP || rowAction == ItemLogger.ITEM_CREATE) ? 1 : 0);
                                     }
                                     else if (rowAction == ItemLogger.ITEM_REMOVE_ENDER || rowAction == ItemLogger.ITEM_ADD_ENDER) {
                                         inventoryAction = (rowAction == ItemLogger.ITEM_REMOVE_ENDER ? 1 : 0);
@@ -1395,9 +1414,9 @@ public class Rollback extends Queue {
 
                 int excludeCount = 0;
                 for (Object excludeTarget : excludeList) {
-                    // don't display that excluded water/fire in inventory rollbacks
+                    // don't display that excluded water/fire/farmland in inventory rollbacks
                     if (actionList.contains(4) && actionList.contains(11)) {
-                        if (excludeTarget.equals(Material.FIRE) || excludeTarget.equals(Material.WATER)) {
+                        if (excludeTarget.equals(Material.FIRE) || excludeTarget.equals(Material.WATER) || excludeTarget.equals(Material.FARMLAND)) {
                             continue;
                         }
                     }
@@ -1472,7 +1491,7 @@ public class Rollback extends Queue {
                 modifiedData = modifiedData.append(Phrase.build(Phrase.AMOUNT_ITEM, NumberFormat.getInstance().format(blockCount), (blockCount == 1 ? Selector.FIRST : Selector.SECOND)));
                 modifyCount++;
             }
-            else if (preview == 0) {
+            else {
                 if (itemCount > 0 || actionList.contains(4)) {
                     modifiedData = modifiedData.append(Phrase.build(Phrase.AMOUNT_ITEM, NumberFormat.getInstance().format(itemCount), (itemCount == 1 ? Selector.FIRST : Selector.SECOND)));
                     modifyCount++;
@@ -1486,17 +1505,13 @@ public class Rollback extends Queue {
                     modifyCount++;
                 }
 
-                if (blockCount > 0 || !actionList.contains(4)) {
+                if (blockCount > 0 || !actionList.contains(4) || preview > 0) {
                     if (modifyCount > 0) {
                         modifiedData.append(", ");
                     }
                     modifiedData.append(Phrase.build(Phrase.AMOUNT_BLOCK, NumberFormat.getInstance().format(blockCount), (blockCount == 1 ? Selector.FIRST : Selector.SECOND)));
                     modifyCount++;
                 }
-            }
-            else if (preview > 0) {
-                modifiedData = modifiedData.append(Phrase.build(Phrase.AMOUNT_BLOCK, NumberFormat.getInstance().format(blockCount), (blockCount == 1 ? Selector.FIRST : Selector.SECOND)));
-                modifyCount++;
             }
 
             StringBuilder modifiedDataVerbose = new StringBuilder();
@@ -1690,7 +1705,7 @@ public class Rollback extends Queue {
 
             Material rowType = itemstack.getType();
             List<Object> metaList = (List<Object>) list;
-            if (!(metaList.get(0) instanceof List<?>)) {
+            if (metaList.size() > 0 && !(metaList.get(0) instanceof List<?>)) {
                 if (rowType.name().endsWith("_BANNER")) {
                     BannerMeta meta = (BannerMeta) itemstack.getItemMeta();
                     for (Object value : metaList) {
@@ -1699,6 +1714,18 @@ public class Rollback extends Queue {
                             meta.addPattern(pattern);
                         }
                     }
+                    itemstack.setItemMeta(meta);
+                }
+                else if (BlockGroup.SHULKER_BOXES.contains(rowType)) {
+                    BlockStateMeta meta = (BlockStateMeta) itemstack.getItemMeta();
+                    ShulkerBox shulkerBox = (ShulkerBox) meta.getBlockState();
+                    for (Object value : metaList) {
+                        ItemStack item = Util.unserializeItemStackLegacy(value);
+                        if (item != null) {
+                            shulkerBox.getInventory().addItem(item);
+                        }
+                    }
+                    meta.setBlockState(shulkerBox);
                     itemstack.setItemMeta(meta);
                 }
 
@@ -1809,8 +1836,10 @@ public class Rollback extends Queue {
                         if (itemCount == 1) {
                             effectBuilder = FireworkEffect.builder();
                             for (Map<String, Object> fireworkData : map) {
+                                org.bukkit.FireworkEffect.Type type = (org.bukkit.FireworkEffect.Type) fireworkData.getOrDefault("type", org.bukkit.FireworkEffect.Type.BALL);
                                 boolean hasFlicker = (Boolean) fireworkData.get("flicker");
                                 boolean hasTrail = (Boolean) fireworkData.get("trail");
+                                effectBuilder.with(type);
                                 effectBuilder.flicker(hasFlicker);
                                 effectBuilder.trail(hasTrail);
                             }

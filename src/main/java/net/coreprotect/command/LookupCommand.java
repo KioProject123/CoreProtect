@@ -25,6 +25,7 @@ import net.coreprotect.config.Config;
 import net.coreprotect.config.ConfigHandler;
 import net.coreprotect.database.Database;
 import net.coreprotect.database.Lookup;
+import net.coreprotect.database.logger.ItemLogger;
 import net.coreprotect.database.lookup.BlockLookup;
 import net.coreprotect.database.lookup.ChestTransactionLookup;
 import net.coreprotect.database.lookup.InteractionLookup;
@@ -266,6 +267,7 @@ public class LookupCommand {
         if (argAction.contains(4) && argAction.contains(11)) { // a:inventory
             argExclude.add(Material.FIRE);
             argExclude.add(Material.WATER);
+            argExclude.add(Material.FARMLAND);
             argExcludeUsers.add("#hopper");
         }
 
@@ -874,7 +876,7 @@ public class LookupCommand {
                                                     int amount = Integer.parseInt(data[10]);
                                                     String rbd = ((Integer.parseInt(data[8]) == 2 || Integer.parseInt(data[8]) == 3) ? Color.STRIKETHROUGH : "");
                                                     String timeago = Util.getTimeSince(Integer.parseInt(time), unixtimestamp, true);
-                                                    Material blockType = Util.itemFilter(Util.getType(Integer.parseInt(dtype)));
+                                                    Material blockType = Util.itemFilter(Util.getType(Integer.parseInt(dtype)), (Integer.parseInt(data[13]) == 0));
                                                     String dname = Util.nameFilter(blockType.name().toLowerCase(Locale.ROOT), ddata);
 
                                                     String selector = Selector.FIRST;
@@ -890,6 +892,10 @@ public class LookupCommand {
                                                     else if (daction == 6 || daction == 7) { // LOOKUP_PROJECTILE
                                                         selector = Selector.SECOND;
                                                         tag = Color.RED + "-";
+                                                    }
+                                                    else if (daction == ItemLogger.ITEM_BREAK || daction == ItemLogger.ITEM_DESTROY || daction == ItemLogger.ITEM_CREATE) {
+                                                        selector = (daction == ItemLogger.ITEM_CREATE ? Selector.FIRST : Selector.SECOND);
+                                                        tag = (daction == ItemLogger.ITEM_CREATE ? Color.GREEN + "+" : Color.RED + "-");
                                                     }
                                                     else { // LOOKUP_CONTAINER
                                                         selector = (daction == 0 ? Selector.FIRST : Selector.SECOND);

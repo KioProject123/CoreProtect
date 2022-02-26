@@ -42,7 +42,7 @@ public class ConfigHandler extends Queue {
     public static final int EDITION_VERSION = 2;
     public static final String EDITION_BRANCH = Util.getBranch();
     public static final String EDITION_NAME = Util.getPluginName();
-    public static final String JAVA_VERSION = "1.8";
+    public static final String JAVA_VERSION = "11.0";
     public static final String SPIGOT_VERSION = "1.14";
     public static String path = "plugins/CoreProtect/";
     public static String sqlite = "database.db";
@@ -92,6 +92,9 @@ public class ConfigHandler extends Queue {
     public static ConcurrentHashMap<String, List<ItemStack>> itemsDrop = new ConcurrentHashMap<>();
     public static ConcurrentHashMap<String, List<ItemStack>> itemsThrown = new ConcurrentHashMap<>();
     public static ConcurrentHashMap<String, List<ItemStack>> itemsShot = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<String, List<ItemStack>> itemsBreak = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<String, List<ItemStack>> itemsDestroy = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<String, List<ItemStack>> itemsCreate = new ConcurrentHashMap<>();
     public static ConcurrentHashMap<String, Object[]> hopperAbort = new ConcurrentHashMap<>();
     public static Map<String, List<ItemStack[]>> forceContainer = syncMap();
     public static Map<String, Integer> lookupType = syncMap();
