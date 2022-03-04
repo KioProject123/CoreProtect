@@ -95,15 +95,15 @@ import net.coreprotect.utility.entity.HangingUtil;
 
 public class Rollback extends Queue {
 
-    public static List<String[]> performRollbackRestore(Statement statement, CommandSender user, List<String> checkUuids, List<String> checkUsers, String timeString, List<Object> restrictList, List<Object> excludeList, List<String> excludeUserList, List<Integer> actionList, Location location, Integer[] radius, long checkTime, boolean restrictWorld, boolean lookup, boolean verbose, final int rollbackType, final int preview) {
+    public static List<String[]> performRollbackRestore(Statement statement, CommandSender user, List<String> checkUuids, List<String> checkUsers, String timeString, List<Object> restrictList, List<Object> excludeList, List<String> excludeUserList, List<Integer> actionList, Location location, Integer[] radius, long startTime, long endTime, boolean restrictWorld, boolean lookup, boolean verbose, final int rollbackType, final int preview) {
         List<String[]> list = new ArrayList<>();
 
         try {
-            long startTime = System.currentTimeMillis();
+            long timeStart = System.currentTimeMillis();
             List<Object[]> lookupList = new ArrayList<>();
 
             if (!actionList.contains(4) && !actionList.contains(5) && !checkUsers.contains("#container")) {
-                lookupList = Lookup.performLookupRaw(statement, user, checkUuids, checkUsers, restrictList, excludeList, excludeUserList, actionList, location, radius, null, checkTime, -1, -1, restrictWorld, lookup);
+                lookupList = Lookup.performLookupRaw(statement, user, checkUuids, checkUsers, restrictList, excludeList, excludeUserList, actionList, location, radius, null, startTime, endTime, -1, -1, restrictWorld, lookup);
             }
 
             if (lookupList == null) {
@@ -137,7 +137,7 @@ public class Rollback extends Queue {
                     itemActionList.add(4);
                 }
 
-                itemList = Lookup.performLookupRaw(statement, user, checkUuids, checkUsers, itemRestrictList, itemExcludeList, excludeUserList, itemActionList, location, radius, null, checkTime, -1, -1, restrictWorld, lookup);
+                itemList = Lookup.performLookupRaw(statement, user, checkUuids, checkUsers, itemRestrictList, itemExcludeList, excludeUserList, itemActionList, location, radius, null, startTime, endTime, -1, -1, restrictWorld, lookup);
             }
 
             TreeMap<Long, Integer> chunkList = new TreeMap<>();
@@ -1074,8 +1074,8 @@ public class Rollback extends Queue {
                                     }
 
                                     int inventoryAction = 0;
-                                    if (rowAction == ItemLogger.ITEM_DROP || rowAction == ItemLogger.ITEM_PICKUP || rowAction == ItemLogger.ITEM_THROW || rowAction == ItemLogger.ITEM_SHOOT || rowAction == ItemLogger.ITEM_BREAK || rowAction == ItemLogger.ITEM_DESTROY || rowAction == ItemLogger.ITEM_CREATE) {
-                                        inventoryAction = ((rowAction == ItemLogger.ITEM_PICKUP || rowAction == ItemLogger.ITEM_CREATE) ? 1 : 0);
+                                    if (rowAction == ItemLogger.ITEM_DROP || rowAction == ItemLogger.ITEM_PICKUP || rowAction == ItemLogger.ITEM_THROW || rowAction == ItemLogger.ITEM_SHOOT || rowAction == ItemLogger.ITEM_BREAK || rowAction == ItemLogger.ITEM_DESTROY || rowAction == ItemLogger.ITEM_CREATE || rowAction == ItemLogger.ITEM_SELL || rowAction == ItemLogger.ITEM_BUY) {
+                                        inventoryAction = ((rowAction == ItemLogger.ITEM_PICKUP || rowAction == ItemLogger.ITEM_CREATE || rowAction == ItemLogger.ITEM_BUY) ? 1 : 0);
                                     }
                                     else if (rowAction == ItemLogger.ITEM_REMOVE_ENDER || rowAction == ItemLogger.ITEM_ADD_ENDER) {
                                         inventoryAction = (rowAction == ItemLogger.ITEM_REMOVE_ENDER ? 1 : 0);
@@ -1255,8 +1255,8 @@ public class Rollback extends Queue {
             int itemCount = rollbackHashData[0];
             int blockCount = rollbackHashData[1];
             int entityCount = rollbackHashData[2];
-            long endTime = System.currentTimeMillis();
-            double totalSeconds = (endTime - startTime) / 1000.0;
+            long timeFinish = System.currentTimeMillis();
+            double totalSeconds = (timeFinish - timeStart) / 1000.0;
 
             if (user != null) {
                 finishRollbackRestore(user, location, checkUsers, restrictList, excludeList, excludeUserList, actionList, timeString, chunkCount, totalSeconds, itemCount, blockCount, entityCount, rollbackType, radius, verbose, restrictWorld, preview);
