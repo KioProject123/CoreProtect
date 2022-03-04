@@ -225,7 +225,7 @@ public class Util extends Queue {
             pagination.append(Color.GREY + ")");
         }
 
-        return message.append(Color.WHITE + backArrow + Color.DARK_AQUA + Phrase.build(Phrase.LOOKUP_PAGE, Color.DARK_AQUA + page + "/" + totalPages) + Color.WHITE + nextArrow + pagination).toString();
+        return message.append(Color.WHITE + backArrow + Phrase.build(Phrase.LOOKUP_PAGE, Color.DARK_AQUA + page + "/" + totalPages) + Color.WHITE + nextArrow + pagination).toString();
     }
 
     public static String getTimeSince(long resultTime, long currentTime, boolean component) {
