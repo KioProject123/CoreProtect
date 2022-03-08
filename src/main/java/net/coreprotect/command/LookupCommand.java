@@ -6,6 +6,7 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import net.coreprotect.ItemCN;
 import org.bukkit.Bukkit;
@@ -50,7 +51,7 @@ public class LookupCommand {
         int argNoisy = CommandHandler.parseNoisy(args);
         List<Integer> argAction = CommandHandler.parseAction(args);
         List<Object> argBlocks = CommandHandler.parseRestricted(player, args, argAction);
-        List<Object> argExclude = CommandHandler.parseExcluded(player, args, argAction);
+        Map<Object, Boolean> argExclude = CommandHandler.parseExcluded(player, args, argAction);
         List<String> argExcludeUsers = CommandHandler.parseExcludedUsers(player, args);
         String ts = CommandHandler.parseTimeString(args);
         long[] argTime = CommandHandler.parseTime(args);
@@ -95,7 +96,7 @@ public class LookupCommand {
         }
 
         /* check for invalid block/entity combinations (exclude) */
-        for (Object arg : argExclude) {
+        for (Object arg : argExclude.keySet()) {
             if (arg instanceof Material) {
                 hasBlock = true;
             }
@@ -267,9 +268,9 @@ public class LookupCommand {
         }
 
         if (argAction.contains(4) && argAction.contains(11)) { // a:inventory
-            argExclude.add(Material.FIRE);
-            argExclude.add(Material.WATER);
-            argExclude.add(Material.FARMLAND);
+            argExclude.put(Material.FIRE, false);
+            argExclude.put(Material.WATER, false);
+            argExclude.put(Material.FARMLAND, false);
             argExcludeUsers.add("#hopper");
         }
 
@@ -696,7 +697,7 @@ public class LookupCommand {
                     final int restricted = argRestricted;
                     // final List<String> uuid_list = arg_uuids;
                     final List<Object> blist = argBlocks;
-                    final List<Object> elist = argExclude;
+                    final Map<Object, Boolean> elist = argExclude;
                     final List<String> euserlist = argExcludeUsers;
                     final int page = pa;
                     final int displayResults = re;
