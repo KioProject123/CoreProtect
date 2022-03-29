@@ -22,6 +22,7 @@ import net.coreprotect.consumer.Consumer;
 import net.coreprotect.consumer.Queue;
 import net.coreprotect.database.logger.ItemLogger;
 import net.coreprotect.database.statement.UserStatement;
+import net.coreprotect.listener.channel.PluginChannelHandshakeListener;
 import net.coreprotect.thread.CacheHandler;
 import net.coreprotect.utility.Util;
 
@@ -147,6 +148,13 @@ public class Lookup extends Queue {
                     String resultMessage = results.getString("message");
 
                     Object[] dataArray = new Object[] { resultId, resultTime, resultUserId, resultMessage };
+                    if (PluginChannelHandshakeListener.getInstance().isPluginChannelPlayer(user)) {
+                        int resultWorldId = results.getInt("wid");
+                        int resultX = results.getInt("x");
+                        int resultY = results.getInt("y");
+                        int resultZ = results.getInt("z");
+                        dataArray = new Object[] { resultId, resultTime, resultUserId, resultMessage, resultWorldId, resultX, resultY, resultZ };
+                    }
                     list.add(dataArray);
                 }
                 else if (actionList.contains(8)) {
@@ -619,6 +627,9 @@ public class Lookup extends Queue {
             else if (actionList.contains(6) || actionList.contains(7)) {
                 queryTable = "chat";
                 rows = "rowid as id,time,user,message";
+                if (PluginChannelHandshakeListener.getInstance().isPluginChannelPlayer(user)) {
+                    rows += ",wid,x,y,z";
+                }
 
                 if (actionList.contains(7)) {
                     queryTable = "command";
@@ -650,24 +661,17 @@ public class Lookup extends Queue {
 
             String unionSelect = "SELECT * FROM (";
             if (Config.getGlobal().MYSQL) {
-                if (radius == null || users.length() > 0 || includeBlock.length() > 0 || includeEntity.length() > 0) {
-                    // index_mysql = "IGNORE INDEX(wid) ";
-                    if (users.length() > 0) {
-                        // index_mysql = "IGNORE INDEX(wid,type,action) ";
-                    }
-                }
-
                 if (queryTable.equals("block")) {
                     if (includeBlock.length() > 0 || includeEntity.length() > 0) {
-                        index = "USE INDEX(type) ";
+                        index = "USE INDEX(type) IGNORE INDEX(user,wid) ";
                     }
                     if (users.length() > 0) {
-                        index = "USE INDEX(user) ";
+                        index = "USE INDEX(user) IGNORE INDEX(type,wid) ";
                     }
-                    if ((index.equals("") && restrictWorld)) {
-                        index = "USE INDEX(wid) ";
+                    if (radius != null && (radius[2] - radius[1]) <= 50 && (radius[6] - radius[5]) <= 50) {
+                        index = "USE INDEX(wid) IGNORE INDEX(type,user) ";
                     }
-                    if ((radius != null || actionList.size() > 0)) {
+                    if ((restrictWorld && (users.length() > 0 || includeBlock.length() > 0 || includeEntity.length() > 0))) {
                         index = "";
                     }
                 }
@@ -682,10 +686,10 @@ public class Lookup extends Queue {
                     if (users.length() > 0) {
                         index = "INDEXED BY block_user_index ";
                     }
-                    if ((index.equals("") && restrictWorld)) {
+                    if (radius != null && (radius[2] - radius[1]) <= 50 && (radius[6] - radius[5]) <= 50) {
                         index = "INDEXED BY block_index ";
                     }
-                    if ((radius != null || actionList.size() > 0)) {
+                    if ((restrictWorld && (users.length() > 0 || includeBlock.length() > 0 || includeEntity.length() > 0))) {
                         index = "";
                     }
                 }
