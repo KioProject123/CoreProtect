@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import net.coreprotect.ItemCN;
 import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
 import org.bukkit.Material;
@@ -32,19 +33,19 @@ import net.coreprotect.utility.Util;
 public class ItemMetaHandler {
 
     public static String getEnchantmentName(Enchantment enchantment, int level) {
-        String name = enchantment.getKey().getKey();
+        String name = ItemCN.getEnchantmentCN(enchantment.getKey().getKey());
 
-        switch (name) {
-            case "vanishing_curse":
-                name = "Curse of Vanishing";
-                break;
-            case "binding_curse":
-                name = "Curse of Binding";
-                break;
-            default:
-                name = Util.capitalize(name.replace("_", " "), true);
-                break;
-        }
+//        switch (name) {
+//            case "vanishing_curse":
+//                name = "Curse of Vanishing";
+//                break;
+//            case "binding_curse":
+//                name = "Curse of Binding";
+//                break;
+//            default:
+//                name = Util.capitalize(name.replace("_", " "), true);
+//                break;
+//        }
 
         if (enchantment.getMaxLevel() > 1) {
             name = name + " " + getEnchantmentLevel(level);
