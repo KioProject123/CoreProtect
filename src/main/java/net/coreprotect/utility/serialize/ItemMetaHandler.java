@@ -47,9 +47,9 @@ public class ItemMetaHandler {
 //                break;
 //        }
 
-        if (enchantment.getMaxLevel() > 1) {
+//        if (enchantment.getMaxLevel() > 1) {
             name = name + " " + getEnchantmentLevel(level);
-        }
+//        }
 
         return name;
     }
