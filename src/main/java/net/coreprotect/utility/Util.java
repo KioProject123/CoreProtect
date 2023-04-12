@@ -116,7 +116,21 @@ public class Util extends Queue {
         return getBlockId(material.name(), true);
     }
 
+    // KioCG start
     public static String getCoordinates(String command, int worldId, int x, int y, int z, boolean displayWorld, boolean italic) {
+        return getCoordinates(command, worldId, x, y, z, displayWorld, italic, false);
+    }
+    // KioCG end
+    public static String getCoordinates(String command, int worldId, int x, int y, int z, boolean displayWorld, boolean italic, boolean privacy) {
+        // KioCG start
+        if (privacy) {
+            worldId = 0;
+            x = 0;
+            y = 0;
+            z = 0;
+        }
+        // KioCG end
+
         StringBuilder message = new StringBuilder(Chat.COMPONENT_TAG_OPEN + Chat.COMPONENT_COMMAND);
 
         StringBuilder worldDisplay = new StringBuilder();
