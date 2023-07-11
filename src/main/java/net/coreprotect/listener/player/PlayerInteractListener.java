@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.kiocg.OwnerUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
 import org.bukkit.GameMode;
@@ -15,12 +16,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.World;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
-import org.bukkit.block.Chest;
-import org.bukkit.block.DoubleChest;
-import org.bukkit.block.Jukebox;
-import org.bukkit.block.Sign;
+import org.bukkit.block.*;
 import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.Bisected.Half;
 import org.bukkit.block.data.BlockData;
@@ -257,6 +253,7 @@ public final class PlayerInteractListener extends Queue implements Listener {
                         event.setCancelled(true);
                     }
                     else if (isContainerBlock && Config.getConfig(world).ITEM_TRANSACTIONS) {
+                        Container container000 = null; // KioCG
                         Location location = null;
                         if (type.equals(Material.CHEST) || type.equals(Material.TRAPPED_CHEST)) {
                             Chest chest = (Chest) clickedBlock.getState();
@@ -265,11 +262,28 @@ public final class PlayerInteractListener extends Queue implements Listener {
                             if (inventoryHolder instanceof DoubleChest) {
                                 DoubleChest doubleChest = (DoubleChest) inventoryHolder;
                                 location = doubleChest.getLocation();
+                                container000 = (Container) doubleChest.getLeftSide(false); // KioCG
                             }
                             else {
                                 location = chest.getLocation();
                             }
                         }
+
+                        // KioCG start
+                        if (container000 == null) {
+                            BlockState blockState000 = block.getState(false);
+                            if (blockState000 instanceof Container) {
+                                container000 = (Container) blockState000;
+                            }
+                        }
+                        if (container000 != null) {
+                            if (!OwnerUtils.isOwner(container000, player)) {
+                                event.setCancelled(true);
+                                Chat.sendMessage(player, Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + "你不能查询此容器, 你不是容器的拥有者.");
+                                return;
+                            }
+                        }
+                        // KioCG end
 
                         if (location == null) {
                             location = clickedBlock.getLocation();
