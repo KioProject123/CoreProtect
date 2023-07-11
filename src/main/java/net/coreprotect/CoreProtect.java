@@ -2,6 +2,7 @@ package net.coreprotect;
 
 import java.io.File;
 
+import com.kiocg.ItemCN;
 import org.bstats.bukkit.MetricsLite;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;

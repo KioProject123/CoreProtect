@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import net.coreprotect.ItemCN;
+import com.kiocg.ItemCN;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;

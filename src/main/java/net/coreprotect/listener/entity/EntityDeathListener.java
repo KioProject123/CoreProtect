@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import net.coreprotect.KiocgUtils;
+import com.kiocg.LogUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
@@ -528,7 +528,7 @@ public final class EntityDeathListener extends Queue implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onEntityDeath(EntityDeathEvent event) {
         LivingEntity entity = event.getEntity();
-        if (KiocgUtils.notLogEntity(entity)) {
+        if (LogUtils.notLogEntity(entity)) {
             return;
         }
 

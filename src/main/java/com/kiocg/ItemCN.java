@@ -1,4 +1,4 @@
-package net.coreprotect;
+package com.kiocg;
 
 import org.bukkit.configuration.file.FileConfiguration;
 import org.jetbrains.annotations.NotNull;

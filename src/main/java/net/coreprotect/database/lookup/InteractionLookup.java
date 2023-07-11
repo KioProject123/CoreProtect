@@ -4,7 +4,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Locale;
 
-import net.coreprotect.ItemCN;
+import com.kiocg.ItemCN;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;

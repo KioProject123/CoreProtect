@@ -1,4 +1,4 @@
-package net.coreprotect;
+package com.kiocg;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -6,7 +6,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 
-public class KiocgUtils {
+public class LogUtils {
     public static boolean notLogEntity(final Entity entity) {
         if (entity.getEntitySpawnReason() == CreatureSpawnEvent.SpawnReason.SPAWNER) {
             return true;

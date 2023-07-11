@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import net.coreprotect.KiocgUtils;
+import com.kiocg.LogUtils;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -326,7 +326,7 @@ public final class BlockBreakListener extends Queue implements Listener {
         if (!event.isCancelled()) {
             Block block = event.getBlock();
 
-            if (KiocgUtils.notLogBlock(block)) {
+            if (LogUtils.notLogBlock(block)) {
                 return;
             }
 
