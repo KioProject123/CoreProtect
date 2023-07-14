@@ -10,8 +10,10 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
+import net.coreprotect.config.ConfigHandler;
 import net.coreprotect.language.Phrase;
 import net.coreprotect.model.BlockGroup;
+import net.coreprotect.paper.PaperAdapter;
 
 public class Teleport {
 
@@ -78,7 +80,12 @@ public class Teleport {
 
                     double oldY = location.getY();
                     location.setY(checkY);
-                    player.teleport(location);
+                    if (ConfigHandler.isFolia) {
+                        PaperAdapter.ADAPTER.teleportAsync(player, location);
+                    }
+                    else {
+                        player.teleport(location);
+                    }
 
                     if (!enforceTeleport) {
                         // Only send a message if the player was moved by at least 1 block

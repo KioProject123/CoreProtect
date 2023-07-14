@@ -9,12 +9,12 @@ import java.util.Map;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.entity.ItemFrame;
-import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.block.BlockFace;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import net.coreprotect.CoreProtect;
+import net.coreprotect.config.Config;
 import net.coreprotect.config.ConfigHandler;
 import net.coreprotect.consumer.Queue;
 import net.coreprotect.database.statement.ContainerStatement;
@@ -34,19 +34,12 @@ public class ContainerLogger extends Queue {
             ItemStack[] contents = null;
             String faceData = null;
 
-            if (type == Material.ARMOR_STAND) {
-                EntityEquipment equipment = (EntityEquipment) container;
-                if (equipment != null) {
-                    contents = Util.getArmorStandContents(equipment);
-                }
+            if (type == Material.ITEM_FRAME) {
+                contents = (ItemStack[]) ((Object[]) container)[1];
+                faceData = ((BlockFace) ((Object[]) container)[2]).name();
             }
-            else if (type == Material.ITEM_FRAME) {
-                ItemFrame itemFrame = (ItemFrame) container;
-                contents = Util.getItemFrameItem(itemFrame);
-                faceData = itemFrame.getFacing().name();
-            }
-            else if (type == Material.JUKEBOX) {
-                contents = new ItemStack[] { ((ItemStack[]) container)[1] };
+            else if (type == Material.JUKEBOX || type == Material.ARMOR_STAND) {
+                contents = (ItemStack[]) ((Object[]) container)[1];
             }
             else {
                 Inventory inventory = (Inventory) container;
@@ -176,7 +169,13 @@ public class ContainerLogger extends Queue {
                         }
 
                         CoreProtectPreLogEvent event = new CoreProtectPreLogEvent(user);
-                        CoreProtect.getInstance().getServer().getPluginManager().callEvent(event);
+                        if (Config.getGlobal().API_ENABLED) {
+                            CoreProtect.getInstance().getServer().getPluginManager().callEvent(event);
+                        }
+
+                        if (event.isCancelled()) {
+                            return;
+                        }
 
                         int userId = UserStatement.getId(preparedStmt, event.getUser(), true);
                         int wid = Util.getWorldId(location.getWorld().getName());

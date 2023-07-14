@@ -55,6 +55,7 @@ public class ConfigHandler extends Queue {
     public static HikariDataSource hikariDataSource = null;
     public static final boolean isSpigot = Util.isSpigot();
     public static final boolean isPaper = Util.isPaper();
+    public static final boolean isFolia = Util.isFolia();
     public static volatile boolean serverRunning = false;
     public static volatile boolean converterRunning = false;
     public static volatile boolean purgeRunning = false;
@@ -118,7 +119,7 @@ public class ConfigHandler extends Queue {
     public static Map<Integer, String> playerIdCacheReversed = syncMap();
     public static Map<String, List<Object>> lastRollback = syncMap();
     public static Map<String, Boolean> activeRollbacks = syncMap();
-    public static Map<String, Object[]> entityBlockMapper = syncMap();
+    public static Map<String, Object[]> entityBlockMapper = new ConcurrentHashMap<>();
     public static ConcurrentHashMap<Long, Long> populatedChunks = new ConcurrentHashMap<>();
     public static ConcurrentHashMap<String, String> language = new ConcurrentHashMap<>();
     public static List<String> databaseTables = new ArrayList<>();
@@ -229,8 +230,7 @@ public class ConfigHandler extends Queue {
             config.setJdbcUrl("jdbc:mysql://" + ConfigHandler.host + ":" + ConfigHandler.port + "/" + ConfigHandler.database);
             config.setUsername(ConfigHandler.username);
             config.setPassword(ConfigHandler.password);
-            config.setMaxLifetime(300000);
-            config.setKeepaliveTime(60000);
+            config.setMaxLifetime(60000);
             config.addDataSourceProperty("characterEncoding", "UTF-8");
             config.addDataSourceProperty("connectionTimeout", "10000");
             /* https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration */

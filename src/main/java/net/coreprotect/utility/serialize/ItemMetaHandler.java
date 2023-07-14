@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.kiocg.ItemCN;
+import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
 import org.bukkit.Material;
@@ -132,7 +133,7 @@ public class ItemMetaHandler {
                 LeatherArmorMeta meta = (LeatherArmorMeta) itemMeta;
                 LeatherArmorMeta subMeta = meta.clone();
 
-                meta.setColor(null);
+                meta.setColor(Bukkit.getServer().getItemFactory().getDefaultLeatherColor());
                 list.add(meta.serialize());
                 metadata.add(list);
 

@@ -20,6 +20,7 @@ import org.bukkit.World;
 
 import net.coreprotect.CoreProtect;
 import net.coreprotect.language.Language;
+import net.coreprotect.thread.Scheduler;
 
 public class Config extends Language {
 
@@ -165,7 +166,7 @@ public class Config extends Language {
         HEADERS.put("sign-text", new String[] { "# Logs text on signs. If disabled, signs will be blank when rolled back." });
         HEADERS.put("buckets", new String[] { "# Logs lava and water sources placed/removed by players who are using buckets." });
         HEADERS.put("leaf-decay", new String[] { "# Logs natural tree leaf decay." });
-        HEADERS.put("tree-growth", new String[] { "# Logs tree growth. Trees are linked to the player who planted the sappling." });
+        HEADERS.put("tree-growth", new String[] { "# Logs tree growth. Trees are linked to the player who planted the sapling." });
         HEADERS.put("mushroom-growth", new String[] { "# Logs mushroom growth." });
         HEADERS.put("vine-growth", new String[] { "# Logs natural vine growth." });
         HEADERS.put("sculk-spread", new String[] { "# Logs the spread of sculk blocks from sculk catalysts." });
@@ -383,7 +384,7 @@ public class Config extends Language {
             // for now this solution is good enough to ensure we only modify on the main thread
             final CompletableFuture<Void> complete = new CompletableFuture<>();
 
-            Bukkit.getScheduler().runTask(CoreProtect.getInstance(), () -> {
+            Scheduler.runTask(CoreProtect.getInstance(), () -> {
                 try {
                     parseConfig(data);
                 }
