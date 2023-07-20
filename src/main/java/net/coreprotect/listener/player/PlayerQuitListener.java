@@ -1,5 +1,6 @@
 package net.coreprotect.listener.player;
 
+import net.coreprotect.config.ConfigHandler;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -21,6 +22,7 @@ public final class PlayerQuitListener extends Queue implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent event) {
         queuePlayerQuit(event.getPlayer());
+        ConfigHandler.inspecting.remove(event.getPlayer().getName());
     }
 
 }
