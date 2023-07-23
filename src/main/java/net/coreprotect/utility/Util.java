@@ -624,7 +624,10 @@ public class Util extends Queue {
     }
 
     public static ItemStack[] getContainerState(ItemStack[] array) {
-        ItemStack[] result = array.clone();
+        ItemStack[] result = array == null ? null : array.clone();
+        if (result == null) {
+            return result;
+        }
 
         int count = 0;
         for (ItemStack itemStack : array) {
