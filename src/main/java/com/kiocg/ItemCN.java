@@ -24,8 +24,15 @@ public class ItemCN {
     }
 
     // 获取物品的中文名
-    public static @NotNull String getItemCN(final @NotNull String string) {
-        return itemCN.containsKey(string) ? itemCN.get(string) + "(" + string + ")" : string;
+    public static @NotNull String getItemCN(@NotNull String string, boolean withEnglish) {
+        if (string.endsWith("smithing_template")) {
+            string = "smithing_template";
+        }
+
+        return itemCN.containsKey(string) ? itemCN.get(string) + (withEnglish ? "(" + string + ")" : "") : string;
+    }
+    public static @NotNull String getItemCN(@NotNull String string) {
+        return getItemCN(string, true);
     }
 
     // 获取生物的中文名

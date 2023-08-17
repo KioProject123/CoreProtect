@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -280,6 +281,19 @@ public class Util extends Queue {
 
         return message.toString();
     }
+
+    // KioCG start
+    public static HoverEvent<HoverEvent.ShowItem> getHoverEvent(byte[] metadata, int type, int amount) {
+        ItemStack item = new ItemStack(Util.getType(type), amount);
+
+        if (metadata == null) {
+            return item.asHoverEvent();
+        }
+
+        item = (ItemStack) Rollback.populateItemStack(item, metadata)[2];
+        return item.asHoverEvent();
+    }
+    // KioCG end
 
     public static String getEnchantments(byte[] metadata, int type, int amount) {
         if (metadata == null) {

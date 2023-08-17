@@ -10,6 +10,9 @@ import java.util.Locale;
 import java.util.Map;
 
 import com.kiocg.ItemCN;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -916,7 +919,7 @@ public class LookupCommand {
                                                     Material blockType = Util.itemFilter(Util.getType(dtype), (Integer.parseInt(data[13]) == 0));
                                                     String dname = Util.nameFilter(blockType.name().toLowerCase(Locale.ROOT), ddata);
                                                     byte[] metadata = data[11] == null ? null : data[11].getBytes(StandardCharsets.ISO_8859_1);
-                                                    String tooltip = Util.getEnchantments(metadata, dtype, amount);
+                                                    HoverEvent<HoverEvent.ShowItem> hoverEvent = Util.getHoverEvent(metadata, dtype, amount);
 
                                                     String selector = Selector.FIRST;
                                                     String tag = Color.WHITE + "-";
@@ -945,7 +948,17 @@ public class LookupCommand {
                                                         tag = (daction == 0 ? Color.GREEN + "+" : Color.RED + "-");
                                                     }
 
-                                                    Chat.sendComponent(player2, timeago + " " + tag + " " + Phrase.build(Phrase.LOOKUP_CONTAINER, Color.DARK_AQUA + rbd + dplayer + Color.WHITE + rbd, "x" + amount, Util.createTooltip(Color.DARK_AQUA + rbd + ItemCN.getItemCN(dname), tooltip) + Color.WHITE, selector));
+                                                    String[] timeagoSplit = timeago.split("\\|", 3);
+                                                    player2.sendMessage(Component.empty()
+                                                                                 .append(LegacyComponentSerializer.legacySection().deserialize(timeagoSplit[2].replace(Chat.COMPONENT_TAG_CLOSE, ""))
+                                                                                                                  .hoverEvent(HoverEvent.showText(LegacyComponentSerializer.legacySection().deserialize(timeagoSplit[1]))))
+                                                                                 .append(LegacyComponentSerializer.legacySection().deserialize(" " + tag + " "))
+                                                                                 .append(LegacyComponentSerializer.legacySection().deserialize(Color.DARK_AQUA + rbd + dplayer + Color.WHITE + rbd + " " + Phrase.getPhraseSelector(Phrase.LOOKUP_CONTAINER, selector) + " "))
+                                                                                 .append(LegacyComponentSerializer.legacySection().deserialize(Color.DARK_AQUA + rbd + ItemCN.getItemCN(dname, false))
+                                                                                                                  .hoverEvent(hoverEvent))
+                                                                                 .append(LegacyComponentSerializer.legacySection().deserialize(Color.WHITE + "x" + amount + ".")));
+                                                    // Chat.sendComponent(player2, timeago + " " + tag + " " + Phrase.build(Phrase.LOOKUP_CONTAINER, Color.DARK_AQUA + rbd + dplayer + Color.WHITE + rbd, "x" + amount, Util.createTooltip(Color.DARK_AQUA + rbd + ItemCN.getItemCN(dname), tooltip) + Color.WHITE, selector));
+
                                                     PluginChannelListener.getInstance().sendData(player2, Integer.parseInt(time), Phrase.LOOKUP_CONTAINER, selector, dplayer, dname, amount, x, y, z, wid, rbd, true, tag.contains("+"));
                                                 }
                                             }
@@ -1014,7 +1027,7 @@ public class LookupCommand {
                                                     String action = "a:block";
                                                     if (finalArgAction.contains(4) || finalArgAction.contains(5) || finalArgAction.contains(11) || amount > -1) {
                                                         byte[] metadata = data[11] == null ? null : data[11].getBytes(StandardCharsets.ISO_8859_1);
-                                                        String tooltip = Util.getEnchantments(metadata, dtype, amount);
+                                                        HoverEvent<HoverEvent.ShowItem> hoverEvent = Util.getHoverEvent(metadata, dtype, amount);
 
                                                         if (daction == 2 || daction == 3) {
                                                             phrase = Phrase.LOOKUP_ITEM; // {picked up|dropped}
@@ -1041,7 +1054,17 @@ public class LookupCommand {
                                                             action = "a:container";
                                                         }
 
-                                                        Chat.sendComponent(player2, timeago + " " + tag + " " + Phrase.build(phrase, Color.DARK_AQUA + rbd + dplayer + Color.WHITE + rbd, "x" + amount, Util.createTooltip(Color.DARK_AQUA + rbd + ItemCN.getItemCN(dname), tooltip) + Color.WHITE, selector));
+                                                        String[] timeagoSplit = timeago.split("\\|", 3);
+                                                        player2.sendMessage(Component.empty()
+                                                                                     .append(LegacyComponentSerializer.legacySection().deserialize(timeagoSplit[2].replace(Chat.COMPONENT_TAG_CLOSE, ""))
+                                                                                                                      .hoverEvent(HoverEvent.showText(LegacyComponentSerializer.legacySection().deserialize(timeagoSplit[1]))))
+                                                                                     .append(LegacyComponentSerializer.legacySection().deserialize(" " + tag + " "))
+                                                                                     .append(LegacyComponentSerializer.legacySection().deserialize(Color.DARK_AQUA + rbd + dplayer + Color.WHITE + rbd + " " + Phrase.getPhraseSelector(phrase, selector) + " "))
+                                                                                     .append(LegacyComponentSerializer.legacySection().deserialize(Color.DARK_AQUA + rbd + ItemCN.getItemCN(dname, false))
+                                                                                                                      .hoverEvent(hoverEvent))
+                                                                                     .append(LegacyComponentSerializer.legacySection().deserialize(Color.WHITE + "x" + amount + ".")));
+                                                        // Chat.sendComponent(player2, timeago + " " + tag + " " + Phrase.build(phrase, Color.DARK_AQUA + rbd + dplayer + Color.WHITE + rbd, "x" + amount, Util.createTooltip(Color.DARK_AQUA + rbd + ItemCN.getItemCN(dname), tooltip) + Color.WHITE, selector));
+
                                                         PluginChannelListener.getInstance().sendData(player2, Integer.parseInt(time), phrase, selector, dplayer, dname, (tag.contains("+") ? 1 : -1), x, y, z, wid, rbd, action.contains("container"), tag.contains("+"));
                                                     }
                                                     else {
