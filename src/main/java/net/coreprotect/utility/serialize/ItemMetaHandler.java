@@ -8,7 +8,6 @@ import java.util.Map.Entry;
 
 import com.kiocg.ItemCN;
 import org.bukkit.Bukkit;
-import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -29,6 +28,7 @@ import org.bukkit.inventory.meta.SuspiciousStewMeta;
 import org.bukkit.potion.PotionEffect;
 
 import net.coreprotect.bukkit.BukkitAdapter;
+import net.coreprotect.utility.Color;
 import net.coreprotect.utility.Util;
 
 public class ItemMetaHandler {
@@ -97,13 +97,20 @@ public class ItemMetaHandler {
 
     public static List<String> getEnchantments(ItemStack item, String displayName) {
         List<String> result = new ArrayList<>();
-        Map<Enchantment, Integer> enchantments = getEnchantments(item.getItemMeta());
+        ItemMeta itemMeta = item.getItemMeta();
+        Map<Enchantment, Integer> enchantments = getEnchantments(itemMeta);
 
         for (Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
             Enchantment enchantment = entry.getKey();
             Integer level = entry.getValue();
 
             result.add(getEnchantmentName(enchantment, level));
+        }
+
+        if (itemMeta.hasLore()) {
+            for (String lore : itemMeta.getLore()) {
+                result.add(Color.DARK_PURPLE + Color.ITALIC + lore);
+            }
         }
 
         return result;
@@ -285,11 +292,11 @@ public class ItemMetaHandler {
         List<Map<String, Object>> fadeList = new ArrayList<>();
         List<Map<String, Object>> list = new ArrayList<>();
 
-        for (Color color : effect.getColors()) {
+        for (org.bukkit.Color color : effect.getColors()) {
             colorList.add(color.serialize());
         }
 
-        for (Color color : effect.getFadeColors()) {
+        for (org.bukkit.Color color : effect.getFadeColors()) {
             fadeList.add(color.serialize());
         }
 
