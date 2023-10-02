@@ -332,7 +332,7 @@ public class Util extends Queue {
         StringBuilder message = new StringBuilder(Chat.COMPONENT_TAG_OPEN + Chat.COMPONENT_POPUP);
 
         // tooltip
-        message.append("|" + tooltip + "|");
+        message.append("|" + tooltip.replace("|", Chat.COMPONENT_PIPE) + "|");
 
         // chat output
         message.append(phrase);
