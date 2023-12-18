@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
+import io.papermc.paper.event.player.PlayerItemFrameChangeEvent;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Creature;
@@ -64,19 +66,21 @@ public final class PlayerInteractEntityListener extends Queue implements Listene
                 return;
             }
 
-            if (frame.getItem().getType() != Material.AIR && event.getHand().equals(EquipmentSlot.HAND) && Config.getConfig(player.getWorld()).PLAYER_INTERACTIONS) {
-                Queue.queuePlayerInteraction(player.getName(), entity.getLocation().getBlock().getState(), Material.ITEM_FRAME);
-            }
-
-            if (!Config.getConfig(player.getWorld()).ITEM_TRANSACTIONS) {
-                return;
-            }
-
-            if (frame.getItem().getType().equals(Material.AIR) && !handItem.getType().equals(Material.AIR)) { // add item to item frame
-                ItemStack[] oldState = new ItemStack[] { new ItemStack(Material.AIR) };
-                ItemStack[] newState = new ItemStack[] { handItem.clone() };
-                queueContainerSpecifiedItems(player.getName(), Material.ITEM_FRAME, new Object[] { oldState, newState, frame.getFacing() }, frame.getLocation(), false);
-            }
+            // KioCG start - 使用PlayerItemFrameChangeEvent记录
+//            if (frame.getItem().getType() != Material.AIR && event.getHand().equals(EquipmentSlot.HAND) && Config.getConfig(player.getWorld()).PLAYER_INTERACTIONS) {
+//                Queue.queuePlayerInteraction(player.getName(), entity.getLocation().getBlock().getState(), Material.ITEM_FRAME);
+//            }
+//
+//            if (!Config.getConfig(player.getWorld()).ITEM_TRANSACTIONS) {
+//                return;
+//            }
+//
+//            if (frame.getItem().getType().equals(Material.AIR) && !handItem.getType().equals(Material.AIR)) { // add item to item frame
+//                ItemStack[] oldState = new ItemStack[] { new ItemStack(Material.AIR) };
+//                ItemStack[] newState = new ItemStack[] { handItem.clone() };
+//                queueContainerSpecifiedItems(player.getName(), Material.ITEM_FRAME, new Object[] { oldState, newState, frame.getFacing() }, frame.getLocation(), false);
+//            }
+            // KioCG end
         }
         else if (!event.isCancelled() && entity instanceof Creature && entity.getType().name().equals("ALLAY")) {
             ItemStack handItem = new ItemStack(Material.AIR);
@@ -109,6 +113,34 @@ public final class PlayerInteractEntityListener extends Queue implements Listene
             }
         }
     }
+
+    // KioCG start
+    @EventHandler(priority = EventPriority.MONITOR)
+    protected void onEntityPlayerItemFrameChange(PlayerItemFrameChangeEvent event) {
+        final Player player = event.getPlayer();
+        final ItemFrame frame = event.getItemFrame();
+        if (event.getAction() == PlayerItemFrameChangeEvent.ItemFrameChangeAction.ROTATE) {
+            if (Config.getConfig(player.getWorld()).PLAYER_INTERACTIONS) {
+                Queue.queuePlayerInteraction(player.getName(), frame.getLocation().getBlock().getState(), Material.ITEM_FRAME);
+            }
+        } else if (event.getAction() == PlayerItemFrameChangeEvent.ItemFrameChangeAction.PLACE) {
+            if (Config.getConfig(frame.getWorld()).ITEM_TRANSACTIONS) {
+                final ItemStack handItem = event.getItemStack();
+                ItemStack[] oldState = new ItemStack[]{new ItemStack(Material.AIR)};
+                ItemStack[] newState = new ItemStack[]{handItem.clone()};
+                PlayerInteractEntityListener.queueContainerSpecifiedItems(player.getName(), Material.ITEM_FRAME, new Object[]{oldState, newState, frame.getFacing()}, frame.getLocation(), false);
+            }
+        } else if (event.getAction() == PlayerItemFrameChangeEvent.ItemFrameChangeAction.REMOVE) {
+            if (Config.getConfig(frame.getWorld()).ITEM_TRANSACTIONS) {
+                String user = player.getName();
+                boolean logDrops = player.getGameMode() != GameMode.CREATIVE;
+                ItemStack[] oldState = new ItemStack[]{frame.getItem().clone()};
+                ItemStack[] newState = new ItemStack[]{new ItemStack(Material.AIR)};
+                PlayerInteractEntityListener.queueContainerSpecifiedItems(user, Material.ITEM_FRAME, new Object[]{oldState, newState, frame.getFacing()}, frame.getLocation(), logDrops);
+            }
+        }
+    }
+    // KioCG end
 
     public static void queueContainerSpecifiedItems(String user, Material type, Object container, Location location, boolean logDrop) {
         ItemStack[] contents = (ItemStack[]) ((Object[]) container)[0];

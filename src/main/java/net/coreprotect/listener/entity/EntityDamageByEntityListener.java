@@ -111,12 +111,14 @@ public final class EntityDamageByEntityListener extends Queue implements Listene
 
                 if (!event.isCancelled() && !inspecting) {
                     if (entity instanceof ItemFrame && Config.getConfig(entityLocation.getWorld()).ITEM_TRANSACTIONS) {
+                        if (!(damager instanceof Player)) { // KioCG - 使用PlayerItemFrameChangeEvent记录
                         ItemFrame frame = (ItemFrame) entity;
                         if (frame.getItem().getType() != Material.AIR) {
                             ItemStack[] oldState = new ItemStack[] { frame.getItem().clone() };
                             ItemStack[] newState = new ItemStack[] { new ItemStack(Material.AIR) };
                             PlayerInteractEntityListener.queueContainerSpecifiedItems(user, Material.ITEM_FRAME, new Object[] { oldState, newState, frame.getFacing() }, frame.getLocation(), logDrops);
                         }
+                        } // KioCG
                     }
                     else if (entity instanceof EnderCrystal && Config.getConfig(entity.getWorld()).BLOCK_BREAK) {
                         EnderCrystal crystal = (EnderCrystal) event.getEntity();
