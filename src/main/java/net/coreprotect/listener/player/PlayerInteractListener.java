@@ -265,7 +265,7 @@ public final class PlayerInteractListener extends Queue implements Listener {
                             if (inventoryHolder instanceof DoubleChest) {
                                 DoubleChest doubleChest = (DoubleChest) inventoryHolder;
                                 location = doubleChest.getLocation();
-                                container000 = (Container) doubleChest.getLeftSide(false); // KioCG
+                                container000 = OwnerUtils.doubleChest(doubleChest); // KioCG
                             }
                             else {
                                 location = chest.getLocation();
@@ -274,18 +274,13 @@ public final class PlayerInteractListener extends Queue implements Listener {
 
                         // KioCG start
                         if (container000 == null) {
-                            BlockState blockState000 = block.getState(false);
+                            BlockState blockState000 = clickedBlock.getState(false);
                             if (blockState000 instanceof Container) {
                                 container000 = (Container) blockState000;
                             }
                         }
-                        if (container000 != null) {
-                            if (!OwnerUtils.isOwner(container000, player)) {
-                                event.setCancelled(true);
-                                Chat.sendMessage(player, Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + "你不能查询此容器, 你不是容器的拥有者.");
-                                return;
-                            }
-                        }
+
+                        Container finalContainer000 = container000;
                         // KioCG end
 
                         if (location == null) {
@@ -307,6 +302,13 @@ public final class PlayerInteractListener extends Queue implements Listener {
                                     Chat.sendMessage(player, Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + Phrase.build(Phrase.PURGE_IN_PROGRESS));
                                     return;
                                 }
+
+                                // KioCG start
+                                if (finalContainer000 != null && !OwnerUtils.isOwner(finalContainer000, player)) {
+                                    Chat.sendMessage(player, Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + "你不能查询此容器, 你不是容器的拥有者.");
+                                    return;
+                                }
+                                // KioCG end
 
                                 if (ConfigHandler.lookupThrottle.get(player.getName()) != null) {
                                     Object[] lookupThrottle = ConfigHandler.lookupThrottle.get(player.getName());
