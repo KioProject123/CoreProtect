@@ -16,10 +16,17 @@ import net.coreprotect.language.Selector;
 import net.coreprotect.listener.channel.PluginChannelListener;
 import net.coreprotect.utility.Color;
 import net.coreprotect.utility.Util;
+import org.bukkit.entity.Player;
 
 public class InteractionLookup {
 
     public static String performLookup(String command, Statement statement, Block block, CommandSender commandSender, int offset, int page, int limit) {
+        // KioCG start
+        if (commandSender instanceof Player) {
+            ((Player) commandSender).sendBlockHighlight(block.getLocation(), 3000, org.bukkit.Color.GREEN, 127);
+        }
+        // KioCG end
+
         String result = "";
 
         try {

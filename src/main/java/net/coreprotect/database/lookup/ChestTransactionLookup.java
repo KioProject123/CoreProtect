@@ -22,10 +22,17 @@ import net.coreprotect.language.Selector;
 import net.coreprotect.listener.channel.PluginChannelListener;
 import net.coreprotect.utility.Color;
 import net.coreprotect.utility.Util;
+import org.bukkit.entity.Player;
 
 public class ChestTransactionLookup {
 
     public static List<String> performLookup(String command, Statement statement, Location l, CommandSender commandSender, int page, int limit, boolean exact) {
+        // KioCG start
+        if (commandSender instanceof Player) {
+            ((Player) commandSender).sendBlockHighlight(l, 3000, org.bukkit.Color.GREEN, 127);
+        }
+        // KioCG end
+
         // List<String> result = new ArrayList<>();
 
         try {
