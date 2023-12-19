@@ -1,7 +1,6 @@
 package com.kiocg;
 
 import org.bukkit.NamespacedKey;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Container;
 import org.bukkit.block.DoubleChest;

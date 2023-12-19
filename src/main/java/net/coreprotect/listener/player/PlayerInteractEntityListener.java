@@ -115,7 +115,7 @@ public final class PlayerInteractEntityListener extends Queue implements Listene
     }
 
     // KioCG start
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     protected void onEntityPlayerItemFrameChange(PlayerItemFrameChangeEvent event) {
         final Player player = event.getPlayer();
         final ItemFrame frame = event.getItemFrame();
@@ -128,7 +128,7 @@ public final class PlayerInteractEntityListener extends Queue implements Listene
                 final ItemStack handItem = event.getItemStack();
                 ItemStack[] oldState = new ItemStack[]{new ItemStack(Material.AIR)};
                 ItemStack[] newState = new ItemStack[]{handItem.clone()};
-                PlayerInteractEntityListener.queueContainerSpecifiedItems(player.getName(), Material.ITEM_FRAME, new Object[]{oldState, newState, frame.getFacing()}, frame.getLocation(), false);
+                queueContainerSpecifiedItems(player.getName(), Material.ITEM_FRAME, new Object[]{oldState, newState, frame.getFacing()}, frame.getLocation(), false);
             }
         } else if (event.getAction() == PlayerItemFrameChangeEvent.ItemFrameChangeAction.REMOVE) {
             if (Config.getConfig(frame.getWorld()).ITEM_TRANSACTIONS) {
@@ -136,7 +136,7 @@ public final class PlayerInteractEntityListener extends Queue implements Listene
                 boolean logDrops = player.getGameMode() != GameMode.CREATIVE;
                 ItemStack[] oldState = new ItemStack[]{frame.getItem().clone()};
                 ItemStack[] newState = new ItemStack[]{new ItemStack(Material.AIR)};
-                PlayerInteractEntityListener.queueContainerSpecifiedItems(user, Material.ITEM_FRAME, new Object[]{oldState, newState, frame.getFacing()}, frame.getLocation(), logDrops);
+                queueContainerSpecifiedItems(user, Material.ITEM_FRAME, new Object[]{oldState, newState, frame.getFacing()}, frame.getLocation(), logDrops);
             }
         }
     }
