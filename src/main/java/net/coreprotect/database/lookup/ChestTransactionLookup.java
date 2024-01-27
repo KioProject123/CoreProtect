@@ -139,7 +139,7 @@ public class ChestTransactionLookup {
                     if (hoverEventWithItem.right().hasItemMeta()) {
                         final Component metaDisplayName = hoverEventWithItem.right().getItemMeta().displayName();
                         if (metaDisplayName != null) {
-                            nameComponent = Component.text("*").append(metaDisplayName);
+                            nameComponent = Component.text("[").append(metaDisplayName).append(Component.text("]"));
                             if (rbFormat.equals(Color.STRIKETHROUGH)) {
                                 nameComponent = nameComponent.decorate(TextDecoration.STRIKETHROUGH);
                             }
