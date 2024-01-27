@@ -7,9 +7,11 @@ import java.util.List;
 import java.util.Locale;
 
 import com.kiocg.ItemCN;
+import it.unimi.dsi.fastutil.Pair;
 import net.coreprotect.utility.Chat;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -23,6 +25,7 @@ import net.coreprotect.listener.channel.PluginChannelListener;
 import net.coreprotect.utility.Color;
 import net.coreprotect.utility.Util;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 public class ChestTransactionLookup {
 
@@ -95,7 +98,7 @@ public class ChestTransactionLookup {
                 int resultAmount = results.getInt("amount");
                 int resultRolledBack = results.getInt("rolled_back");
                 byte[] resultMetadata = results.getBytes("metadata");
-                HoverEvent<HoverEvent.ShowItem> hoverEvent = Util.getHoverEvent(resultMetadata, resultType, resultAmount);
+                Pair<HoverEvent<HoverEvent.ShowItem>, ItemStack> hoverEventWithItem = Util.getHoverEventWithItem(resultMetadata, resultType, resultAmount);
 
                 if (ConfigHandler.playerIdCacheReversed.get(resultUserId) == null) {
                     UserStatement.loadName(statement.getConnection(), resultUserId);
@@ -131,15 +134,27 @@ public class ChestTransactionLookup {
                     target = target.split(":")[1];
                 }
 
+                Component nameComponent = LegacyComponentSerializer.legacySection().deserialize(Color.DARK_AQUA + rbFormat + ItemCN.getItemCN(target, false));
+                if (hoverEventWithItem.right() != null) {
+                    if (hoverEventWithItem.right().hasItemMeta()) {
+                        final Component metaDisplayName = hoverEventWithItem.right().getItemMeta().displayName();
+                        if (metaDisplayName != null) {
+                            nameComponent = Component.text("*").append(metaDisplayName);
+                            if (rbFormat.equals(Color.STRIKETHROUGH)) {
+                                nameComponent = nameComponent.decorate(TextDecoration.STRIKETHROUGH);
+                            }
+                        }
+                    }
+                }
+
                 String[] timeagoSplit = timeAgo.split("\\|", 3);
                 commandSender.sendMessage(Component.empty()
                                                    .append(LegacyComponentSerializer.legacySection().deserialize(timeagoSplit[2].replace(Chat.COMPONENT_TAG_CLOSE, ""))
                                                                                     .hoverEvent(HoverEvent.showText(LegacyComponentSerializer.legacySection().deserialize(timeagoSplit[1]))))
                                                    .append(LegacyComponentSerializer.legacySection().deserialize(" " + tag + " "))
                                                    .append(LegacyComponentSerializer.legacySection().deserialize(Color.DARK_AQUA + rbFormat + resultUser + Color.WHITE + rbFormat + " " + Phrase.getPhraseSelector(Phrase.LOOKUP_CONTAINER, selector) + " "))
-                                                   .append(LegacyComponentSerializer.legacySection().deserialize(Color.DARK_AQUA + rbFormat + ItemCN.getItemCN(target, false))
-                                                                                    .hoverEvent(hoverEvent))
-                                                   .append(LegacyComponentSerializer.legacySection().deserialize(Color.WHITE + "x" + resultAmount + ".")));
+                                                   .append(nameComponent.hoverEvent(hoverEventWithItem.left()))
+                                                   .append(LegacyComponentSerializer.legacySection().deserialize(Color.WHITE + rbFormat + "x" + resultAmount + ".")));
                 // Chat.sendComponent(commandSender, (timeAgo + " " + tag + " " + Phrase.build(Phrase.LOOKUP_CONTAINER, Color.DARK_AQUA + rbFormat + resultUser + Color.WHITE + rbFormat, "x" + resultAmount, Util.createTooltip(Color.DARK_AQUA + rbFormat + ItemCN.getItemCN(target), tooltip) + Color.WHITE, selector)));
 
                 PluginChannelListener.getInstance().sendData(commandSender, resultTime, Phrase.LOOKUP_CONTAINER, selector, resultUser, target, resultAmount, x, y, z, worldId, rbFormat, true, tag.contains("+"));

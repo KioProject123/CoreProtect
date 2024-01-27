@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import it.unimi.dsi.fastutil.Pair;
 import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -283,15 +284,15 @@ public class Util extends Queue {
     }
 
     // KioCG start
-    public static HoverEvent<HoverEvent.ShowItem> getHoverEvent(byte[] metadata, int type, int amount) {
+    public static Pair<HoverEvent<HoverEvent.ShowItem>, ItemStack> getHoverEventWithItem(byte[] metadata, int type, int amount) {
         ItemStack item = new ItemStack(Util.getType(type), amount);
 
         if (metadata == null) {
-            return item.asHoverEvent();
+            return Pair.of(item.asHoverEvent(), null);
         }
 
         item = (ItemStack) Rollback.populateItemStack(item, metadata)[2];
-        return item.asHoverEvent();
+        return Pair.of(item.asHoverEvent(), item);
     }
     // KioCG end
 
