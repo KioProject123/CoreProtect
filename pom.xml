@@ -85,10 +85,6 @@
       <url>https://repo.papermc.io/repository/maven-public/</url>
     </repository>
     <repository>
-      <id>purpur</id>
-      <url>https://repo.purpurmc.org/snapshots</url>
-    </repository>
-    <repository>
       <id>codemc-repo</id>
       <url>https://repo.codemc.org/repository/maven-public/</url>
     </repository>
@@ -105,9 +101,9 @@
     bukkit: org.bukkit
     -->
     <dependency>
-      <groupId>org.purpurmc.purpur</groupId>
-      <artifactId>purpur-api</artifactId>
-      <version>1.20.4-R0.1-SNAPSHOT</version>
+      <groupId>com.kiocg.java</groupId>
+      <artifactId>kiocg-api</artifactId>
+      <version>1.21.5-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>

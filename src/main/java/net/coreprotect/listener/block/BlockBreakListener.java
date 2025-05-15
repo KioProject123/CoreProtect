@@ -338,7 +338,7 @@ public final class BlockBreakListener extends Queue implements Listener {
         if (!event.isCancelled()) {
             Block block = event.getBlock();
 
-            if (LogUtils.notLogBlock(block)) {
+            if (LogUtils.skipLogBlock(block)) {
                 return;
             }
 

@@ -4,18 +4,17 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
-import org.bukkit.event.entity.CreatureSpawnEvent;
 
 public class LogUtils {
-    public static boolean notLogEntity(final Entity entity) {
-        if (entity.getEntitySpawnReason() == CreatureSpawnEvent.SpawnReason.SPAWNER) {
+    public static boolean skipLogEntity(final Entity entity) {
+        if (entity.fromMobSpawner()) {
             return true;
         }
 
         return false;
     }
 
-    public static boolean notLogBlock(final Block block) {
+    public static boolean skipLogBlock(final Block block) {
         switch (block.getWorld().getEnvironment()) {
             case NORMAL: {
                 switch (block.getType()) {

@@ -548,7 +548,7 @@ public final class EntityDeathListener extends Queue implements Listener {
         */
 
         LivingEntity entity = event.getEntity();
-        if (LogUtils.notLogEntity(entity)) {
+        if (LogUtils.skipLogEntity(entity)) {
             return;
         }
 

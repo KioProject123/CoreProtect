@@ -10,41 +10,47 @@ import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class OwnerUtils {
-    private static final NamespacedKey ownerUUID = new NamespacedKey("KioCG-ContainerOwner".toLowerCase(), "OwnerUUID".toLowerCase());
-    private static final NamespacedKey timeMillis = new NamespacedKey("KioCG-ContainerOwner".toLowerCase(), "TimeMillis".toLowerCase());
+    private static final NamespacedKey ownerUUID = NamespacedKey.kiocg("owner");
+    private static final NamespacedKey placeTime = NamespacedKey.kiocg("place_time");
 
     public static boolean isOwner(final @NotNull Container container, final @NotNull Player player) {
         return player.hasPermission("coreprotect.teleport") || player.getUniqueId().equals(getOwner(container));
     }
 
     public static @Nullable UUID getOwner(final @NotNull PersistentDataHolder holder) {
-        final String uuidString = holder.getPersistentDataContainer().get(ownerUUID, PersistentDataType.STRING);
-        return uuidString != null ? UUID.fromString(uuidString) : null;
+        return holder.getPersistentDataContainer().get(ownerUUID, PersistentDataType.UUID);
     }
 
     public static boolean hasOwner(final @NotNull PersistentDataHolder holder) {
         return holder.getPersistentDataContainer().has(ownerUUID);
     }
 
-    public static long getTimeMillis(final @NotNull PersistentDataHolder holder) {
-        final Long time = holder.getPersistentDataContainer().get(timeMillis, PersistentDataType.LONG);
-        return time != null ? time : 0L;
+    public static long getPlaceTime(final @NotNull PersistentDataHolder holder) {
+        return holder.getPersistentDataContainer().getOrDefault(placeTime, PersistentDataType.LONG, 0L);
     }
 
-    public static Chest doubleChest(final @NotNull DoubleChest doubleChest) {
-        final Chest leftSide = (Chest) doubleChest.getLeftSide(false);
-        final Chest rightSide = (Chest) doubleChest.getRightSide(false);
-        final long leftTimeMillis = leftSide != null ? getTimeMillis(leftSide) : 0L;
-        final long rightTimeMillis = rightSide != null ? getTimeMillis(rightSide) : 0L;
-        if (leftTimeMillis != 0L && rightTimeMillis != 0L) {
-            return leftTimeMillis > rightTimeMillis ? rightSide : leftSide;
-        } else if (leftTimeMillis == 0L) {
-            return rightSide;
-        } else {
+    public static @NotNull Chest getDoubleChestSide(final @NotNull DoubleChest doubleChest) {
+        final Chest leftSide = Objects.requireNonNull((Chest) doubleChest.getLeftSide(false));
+        final Chest rightSide = Objects.requireNonNull((Chest) doubleChest.getRightSide(false));
+        if (leftSide.hasLootTable()) {
             return leftSide;
+        } else if (rightSide.hasLootTable()) {
+            return rightSide;
         }
+
+        final long leftPlaceTime = OwnerUtils.getPlaceTime(leftSide);
+        final long rightPlaceTime = OwnerUtils.getPlaceTime(rightSide);
+        if (rightPlaceTime == 0L) {
+            return leftSide;
+        } else if (leftPlaceTime == 0L) {
+            return rightSide;
+        }
+
+        // 大箱子左侧优先
+        return leftPlaceTime <= rightPlaceTime ? leftSide : rightSide;
     }
 }
