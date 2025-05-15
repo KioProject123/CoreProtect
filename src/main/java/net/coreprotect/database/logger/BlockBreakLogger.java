@@ -4,6 +4,7 @@ import java.sql.PreparedStatement;
 import java.util.List;
 import java.util.Locale;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 
@@ -15,7 +16,7 @@ import net.coreprotect.database.statement.BlockStatement;
 import net.coreprotect.database.statement.UserStatement;
 import net.coreprotect.event.CoreProtectPreLogEvent;
 import net.coreprotect.thread.CacheHandler;
-import net.coreprotect.utility.Util;
+import net.coreprotect.utility.WorldUtils;
 
 public class BlockBreakLogger {
 
@@ -29,7 +30,7 @@ public class BlockBreakLogger {
                 return;
             }
 
-            Material checkType = Util.getType(type);
+            Material checkType = net.coreprotect.utility.MaterialUtils.getType(type);
             if (checkType == null) {
                 return;
             }
@@ -42,7 +43,8 @@ public class BlockBreakLogger {
             }
 
             if (!user.startsWith("#")) {
-                CacheHandler.spreadCache.remove(location);
+                String cacheId = location.getBlockX() + "." + location.getBlockY() + "." + location.getBlockZ() + "." + WorldUtils.getWorldId(location.getWorld().getName());
+                CacheHandler.spreadCache.remove(cacheId);
             }
 
             if (checkType == Material.LECTERN) {
@@ -53,12 +55,12 @@ public class BlockBreakLogger {
             }
 
             CoreProtectPreLogEvent event = new CoreProtectPreLogEvent(user);
-            if (Config.getGlobal().API_ENABLED) {
+            if (Config.getGlobal().API_ENABLED && !Bukkit.isPrimaryThread()) {
                 CoreProtect.getInstance().getServer().getPluginManager().callEvent(event);
             }
 
             int userId = UserStatement.getId(preparedStmt, event.getUser(), true);
-            int wid = Util.getWorldId(location.getWorld().getName());
+            int wid = WorldUtils.getWorldId(location.getWorld().getName());
             int time = (int) (System.currentTimeMillis() / 1000L);
             int x = location.getBlockX();
             int y = location.getBlockY();

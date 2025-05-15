@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.bukkit.Location;
@@ -19,10 +20,10 @@ import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.BlockInventoryHolder;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 
 import net.coreprotect.CoreProtect;
@@ -32,21 +33,40 @@ import net.coreprotect.consumer.Queue;
 import net.coreprotect.model.BlockGroup;
 import net.coreprotect.paper.PaperAdapter;
 import net.coreprotect.thread.Scheduler;
-import net.coreprotect.utility.Util;
+import net.coreprotect.utility.ItemUtils;
 import net.coreprotect.utility.Validate;
+import us.lynuxcraft.deadsilenceiv.advancedchests.AdvancedChestsAPI;
+import us.lynuxcraft.deadsilenceiv.advancedchests.chest.AdvancedChest;
 
 public final class InventoryChangeListener extends Queue implements Listener {
 
     protected static AtomicLong tasksStarted = new AtomicLong();
     protected static AtomicLong tasksCompleted = new AtomicLong();
+    private static ConcurrentHashMap<String, Boolean> inventoryProcessing = new ConcurrentHashMap<>();
+    private static final Object taskCompletionLock = new Object();
+    private static final long TASK_WAIT_MAX_MS = 50; // Maximum wait time in milliseconds
 
     protected static void checkTasks(long taskStarted) {
         try {
-            int waitCount = 0;
-            while (tasksCompleted.get() < (taskStarted - 1L) && waitCount++ <= 50) {
-                Thread.sleep(1);
+            // Skip checking if this is the first task or we're already caught up
+            if (taskStarted <= 1 || tasksCompleted.get() >= (taskStarted - 1L)) {
+                tasksCompleted.set(taskStarted);
+                return;
             }
-            tasksCompleted.set(taskStarted);
+
+            // Try to update without waiting if possible
+            if (tasksCompleted.compareAndSet(taskStarted - 1L, taskStarted)) {
+                return;
+            }
+
+            // Use proper synchronization instead of busy waiting
+            synchronized (taskCompletionLock) {
+                if (tasksCompleted.get() < (taskStarted - 1L)) {
+                    taskCompletionLock.wait(TASK_WAIT_MAX_MS);
+                }
+                tasksCompleted.set(taskStarted);
+                taskCompletionLock.notifyAll(); // Notify other waiting threads
+            }
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -85,9 +105,19 @@ public final class InventoryChangeListener extends Queue implements Listener {
                 else {
                     InventoryHolder inventoryHolder = inventory.getHolder();
                     if (inventoryHolder == null) {
-                        return false;
+                        if (CoreProtect.getInstance().isAdvancedChestsEnabled()) {
+                            AdvancedChest<?, ?> advancedChest = AdvancedChestsAPI.getInventoryManager().getAdvancedChest(inventory);
+                            if (advancedChest != null) {
+                                playerLocation = advancedChest.getLocation();
+                            }
+                            else {
+                                return false;
+                            }
+                        }
+                        else {
+                            return false;
+                        }
                     }
-
                     if (inventoryHolder instanceof BlockState) {
                         BlockState state = (BlockState) inventoryHolder;
                         type = state.getType();
@@ -123,7 +153,7 @@ public final class InventoryChangeListener extends Queue implements Listener {
                             List<ItemStack[]> list = ConfigHandler.forceContainer.get(loggingChestIdViewer);
 
                             if (list != null && list.size() < sizeOld) {
-                                ItemStack[] containerState = Util.getContainerState(inventoryData);
+                                ItemStack[] containerState = ItemUtils.getContainerState(inventoryData);
 
                                 // If items have been removed by a hopper, merge into containerState
                                 List<Object> transactingChest = ConfigHandler.transactingChest.get(transactingChestId);
@@ -182,14 +212,14 @@ public final class InventoryChangeListener extends Queue implements Listener {
                             List<ItemStack[]> list = ConfigHandler.oldContainer.get(loggingChestId);
 
                             if (list != null && list.size() <= forceSize) {
-                                list.add(Util.getContainerState(inventoryData));
+                                list.add(ItemUtils.getContainerState(inventoryData));
                                 ConfigHandler.oldContainer.put(loggingChestId, list);
                             }
                         }
                     }
                     else {
                         List<ItemStack[]> list = new ArrayList<>();
-                        list.add(Util.getContainerState(inventoryData));
+                        list.add(ItemUtils.getContainerState(inventoryData));
                         ConfigHandler.oldContainer.put(loggingChestId, list);
                     }
 
@@ -203,7 +233,7 @@ public final class InventoryChangeListener extends Queue implements Listener {
         return false;
     }
 
-    private static void onInventoryInteractAsync(Player player, Inventory inventory, boolean enderChest) {
+    static void onInventoryInteractAsync(Player player, Inventory inventory, boolean enderChest) {
         if (inventory == null) {
             return;
         }
@@ -215,6 +245,17 @@ public final class InventoryChangeListener extends Queue implements Listener {
         catch (Exception e) {
             return;
         }
+
+        if (location == null && !CoreProtect.getInstance().isAdvancedChestsEnabled()) {
+            return;
+        }
+        if (CoreProtect.getInstance().isAdvancedChestsEnabled()) {
+            AdvancedChest<?, ?> chest = AdvancedChestsAPI.getInventoryManager().getAdvancedChest(inventory);
+            if (chest != null) {
+                location = chest.getLocation();
+            }
+        }
+
         if (location == null) {
             return;
         }
@@ -224,19 +265,81 @@ public final class InventoryChangeListener extends Queue implements Listener {
         }
 
         Location inventoryLocation = location;
-        ItemStack[] containerState = Util.getContainerState(inventory.getContents());
+        ItemStack[] containerState = ItemUtils.getContainerState(inventory.getContents());
+
+        String loggingChestId = player.getName() + "." + location.getBlockX() + "." + location.getBlockY() + "." + location.getBlockZ();
+        Boolean lastTransaction = inventoryProcessing.get(loggingChestId);
+        if (lastTransaction != null) {
+            return;
+        }
+        inventoryProcessing.put(loggingChestId, true);
 
         final long taskStarted = InventoryChangeListener.tasksStarted.incrementAndGet();
         Scheduler.runTaskAsynchronously(CoreProtect.getInstance(), () -> {
             try {
                 Material containerType = (enderChest != true ? null : Material.ENDER_CHEST);
                 InventoryChangeListener.checkTasks(taskStarted);
+                inventoryProcessing.remove(loggingChestId);
                 onInventoryInteract(player.getName(), inventory, containerState, containerType, inventoryLocation, true);
             }
             catch (Exception e) {
                 e.printStackTrace();
             }
         });
+    }
+
+    /**
+     * Checks for anvil operations to properly track enchanted item results
+     * 
+     * @param event
+     *            The inventory click event
+     * @return true if this was an anvil result operation that was handled, false otherwise
+     */
+    private boolean checkAnvilOperation(InventoryClickEvent event) {
+        if (event.getInventory().getType() != InventoryType.ANVIL) {
+            return false;
+        }
+
+        // Only process result slot clicks in anvils (slot 2)
+        if (event.getRawSlot() != 2) {
+            return false;
+        }
+
+        // Ensure we have a valid player and item
+        Player player = (Player) event.getWhoClicked();
+        ItemStack resultItem = event.getCurrentItem();
+        if (resultItem == null || resultItem.getType() == Material.AIR) {
+            return false;
+        }
+
+        // Get the input items (slots 0 and 1 in the anvil)
+        ItemStack firstItem = event.getInventory().getItem(0);
+        ItemStack secondItem = event.getInventory().getItem(1);
+
+        if (firstItem == null || secondItem == null) {
+            return false;
+        }
+
+        // Process the enchantment operation
+        Location location = player.getLocation();
+        String loggingItemId = player.getName().toLowerCase(Locale.ROOT) + "." + location.getBlockX() + "." + location.getBlockY() + "." + location.getBlockZ();
+        int itemId = getItemId(loggingItemId);
+
+        // Log the input items as removed
+        List<ItemStack> removedItems = new ArrayList<>();
+        removedItems.add(firstItem.clone());
+        removedItems.add(secondItem.clone());
+        ConfigHandler.itemsDestroy.put(loggingItemId, removedItems);
+
+        // Log the output item as created
+        List<ItemStack> createdItems = new ArrayList<>();
+        createdItems.add(resultItem.clone());
+        ConfigHandler.itemsCreate.put(loggingItemId, createdItems);
+
+        int time = (int) (System.currentTimeMillis() / 1000L) + 1;
+        Queue.queueItemTransaction(player.getName(), location.clone(), time, 0, itemId);
+
+        return true;
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -246,12 +349,23 @@ public final class InventoryChangeListener extends Queue implements Listener {
             return;
         }
 
+        // Check if this is an anvil operation first
+        if (checkAnvilOperation(event)) {
+            return;
+        }
+
         boolean enderChest = false;
+        boolean advancedChest;
         if (inventoryAction != InventoryAction.MOVE_TO_OTHER_INVENTORY && inventoryAction != InventoryAction.COLLECT_TO_CURSOR && inventoryAction != InventoryAction.UNKNOWN) {
             // Perform this check to prevent triggering onInventoryInteractAsync when a user is just clicking items in their own inventory
             Inventory inventory = null;
             try {
-                inventory = event.getView().getInventory(event.getRawSlot());
+                try {
+                    inventory = event.getView().getInventory(event.getRawSlot());
+                }
+                catch (IncompatibleClassChangeError e) {
+                    inventory = event.getClickedInventory();
+                }
             }
             catch (Exception e) {
                 return;
@@ -262,7 +376,11 @@ public final class InventoryChangeListener extends Queue implements Listener {
 
             InventoryHolder inventoryHolder = inventory.getHolder();
             enderChest = inventory.equals(event.getWhoClicked().getEnderChest());
-            if ((inventoryHolder == null || !(inventoryHolder instanceof BlockInventoryHolder || inventoryHolder instanceof DoubleChest)) && !enderChest) {
+            advancedChest = isAdvancedChest(inventory);
+            if ((!(inventoryHolder instanceof BlockInventoryHolder || inventoryHolder instanceof DoubleChest)) && !enderChest && !advancedChest) {
+                return;
+            }
+            if (advancedChest && event.getSlot() > inventory.getSize() - 10) {
                 return;
             }
         }
@@ -275,7 +393,11 @@ public final class InventoryChangeListener extends Queue implements Listener {
 
             InventoryHolder inventoryHolder = inventory.getHolder();
             enderChest = inventory.equals(event.getWhoClicked().getEnderChest());
-            if ((inventoryHolder == null || !(inventoryHolder instanceof BlockInventoryHolder || inventoryHolder instanceof DoubleChest)) && !enderChest) {
+            advancedChest = isAdvancedChest(inventory);
+            if ((!(inventoryHolder instanceof BlockInventoryHolder || inventoryHolder instanceof DoubleChest)) && !enderChest && !advancedChest) {
+                return;
+            }
+            if (advancedChest && event.getSlot() > inventory.getSize() - 10) {
                 return;
             }
         }
@@ -288,19 +410,16 @@ public final class InventoryChangeListener extends Queue implements Listener {
     protected void onInventoryDragEvent(InventoryDragEvent event) {
         boolean movedItem = false;
         boolean enderChest = false;
-        InventoryView inventoryView = event.getView();
-        for (Integer slot : event.getRawSlots()) {
-            Inventory inventory = inventoryView.getInventory(slot);
-            if (inventory == null) {
-                continue;
-            }
 
-            InventoryHolder inventoryHolder = inventory.getHolder();
-            enderChest = inventory.equals(event.getWhoClicked().getEnderChest());
-            if ((inventoryHolder != null && (inventoryHolder instanceof BlockInventoryHolder || inventoryHolder instanceof DoubleChest)) || enderChest) {
-                movedItem = true;
-                break;
-            }
+        Inventory inventory = event.getInventory();
+        InventoryHolder inventoryHolder = inventory.getHolder();
+        if (inventory == null || inventoryHolder != null && inventoryHolder.equals(event.getWhoClicked())) {
+            return;
+        }
+
+        enderChest = inventory.equals(event.getWhoClicked().getEnderChest());
+        if (((inventoryHolder instanceof BlockInventoryHolder || inventoryHolder instanceof DoubleChest)) || enderChest || isAdvancedChest(inventory)) {
+            movedItem = true;
         }
 
         if (!movedItem) {
@@ -317,7 +436,12 @@ public final class InventoryChangeListener extends Queue implements Listener {
             return;
         }
 
-        Location location = event.getSource().getLocation();
+        Inventory sourceInventory = event.getSource();
+        if (sourceInventory == null) {
+            return;
+        }
+
+        Location location = sourceInventory.getLocation();
         if (location == null) {
             return;
         }
@@ -327,7 +451,7 @@ public final class InventoryChangeListener extends Queue implements Listener {
             return;
         }
 
-        InventoryHolder sourceHolder = PaperAdapter.ADAPTER.getHolder(event.getSource(), false);
+        InventoryHolder sourceHolder = PaperAdapter.ADAPTER.getHolder(sourceInventory, false);
         if (sourceHolder == null) {
             return;
         }
@@ -339,10 +463,16 @@ public final class InventoryChangeListener extends Queue implements Listener {
 
         if (hopperTransactions) {
             if (Validate.isHopper(destinationHolder) && (Validate.isContainer(sourceHolder) && !Validate.isHopper(sourceHolder))) {
-                HopperPullListener.processHopperPull(location, sourceHolder, destinationHolder, event.getItem());
+                HopperPullListener.processHopperPull(location, "#hopper", sourceHolder, destinationHolder, event.getItem());
             }
             else if (Validate.isHopper(sourceHolder) && (Validate.isContainer(destinationHolder) && !Validate.isHopper(destinationHolder))) {
-                HopperPushListener.processHopperPush(location, sourceHolder, destinationHolder, event.getItem());
+                HopperPushListener.processHopperPush(location, "#hopper", sourceHolder, destinationHolder, event.getItem());
+            }
+            else if (Validate.isDropper(sourceHolder) && (Validate.isContainer(destinationHolder))) {
+                HopperPullListener.processHopperPull(location, "#dropper", sourceHolder, destinationHolder, event.getItem());
+                if (!Validate.isHopper(destinationHolder)) {
+                    HopperPushListener.processHopperPush(location, "#dropper", sourceHolder, destinationHolder, event.getItem());
+                }
             }
 
             return;
@@ -357,6 +487,11 @@ public final class InventoryChangeListener extends Queue implements Listener {
             return;
         }
 
-        HopperPullListener.processHopperPull(location, sourceHolder, destinationHolder, event.getItem());
+        HopperPullListener.processHopperPull(location, "#hopper", sourceHolder, destinationHolder, event.getItem());
     }
+
+    private boolean isAdvancedChest(Inventory inventory) {
+        return CoreProtect.getInstance().isAdvancedChestsEnabled() && AdvancedChestsAPI.getInventoryManager().getAdvancedChest(inventory) != null;
+    }
+
 }

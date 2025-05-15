@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 
 import net.coreprotect.utility.ChatMessage;
 import net.coreprotect.utility.Color;
-import net.coreprotect.utility.Util;
+import net.coreprotect.utility.StringUtils;
 
 public enum Phrase {
 
@@ -27,6 +27,7 @@ public enum Phrase {
     CONSUMER_ERROR,
     CONSUMER_TOGGLED,
     CONTAINER_HEADER,
+    CPU_CORES,
     DATABASE_BUSY,
     DATABASE_INDEX_ERROR,
     DATABASE_LOCKED_1,
@@ -37,6 +38,7 @@ public enum Phrase {
     DEVELOPMENT_BRANCH,
     DIRT_BLOCK,
     DISABLE_SUCCESS,
+    DONATION_KEY_REQUIRED,
     ENABLE_FAILED,
     ENABLE_SUCCESS,
     ENJOY_COREPROTECT,
@@ -158,6 +160,7 @@ public enum Phrase {
     PREVIEW_CANCELLING,
     PREVIEW_IN_GAME,
     PREVIEW_TRANSACTION,
+    PRIMARY_THREAD_ERROR,
     PURGE_ABORTED,
     PURGE_ERROR,
     PURGE_FAILED,
@@ -171,6 +174,7 @@ public enum Phrase {
     PURGE_ROWS,
     PURGE_STARTED,
     PURGE_SUCCESS,
+    RAM_STATS,
     RELOAD_STARTED,
     RELOAD_SUCCESS,
     ROLLBACK_ABORTED,
@@ -192,6 +196,7 @@ public enum Phrase {
     STATUS_DATABASE,
     STATUS_INTEGRATION,
     STATUS_LICENSE,
+    STATUS_SYSTEM,
     STATUS_VERSION,
     TELEPORTED,
     TELEPORTED_SAFETY,
@@ -199,8 +204,10 @@ public enum Phrase {
     TIME_DAYS,
     TIME_HOURS,
     TIME_MINUTES,
+    TIME_MONTHS,
     TIME_SECONDS,
     TIME_WEEKS,
+    TIME_YEARS,
     UPDATE_ERROR,
     UPDATE_HEADER,
     UPDATE_NOTICE,
@@ -211,6 +218,7 @@ public enum Phrase {
     USING_SQLITE,
     VALID_DONATION_KEY,
     VERSION_NOTICE,
+    VERSION_INCOMPATIBLE,
     VERSION_REQUIRED,
     WORLD_NOT_FOUND;
 
@@ -233,10 +241,20 @@ public enum Phrase {
 
     public static String build(Phrase phrase, String... params) {
         String output = phrase.getTranslatedPhrase();
+
+        // If translated phrase is null, fall back to the default phrase
+        if (output == null) {
+            output = phrase.getPhrase();
+            // If that's still null, use an empty string to avoid NullPointerException
+            if (output == null) {
+                output = "";
+            }
+        }
+
         String color = "";
 
         if (HEADERS.contains(phrase)) {
-            output = Util.capitalize(output, true);
+            output = StringUtils.capitalize(output, true);
         }
 
         int index = 0;
@@ -277,6 +295,12 @@ public enum Phrase {
     private static String buildInternal(Phrase phrase, String[] params, String color) {
         String output = phrase.getPhrase(); // get internal phrase
 
+        // If internal phrase is null, use an empty string to avoid NullPointerException
+        if (output == null) {
+            output = "";
+            return output; // Return empty string immediately if no phrase is available
+        }
+
         int index = 0;
         for (String param : params) {
             if (index == 0 && COLORS.contains(param)) {
@@ -295,6 +319,11 @@ public enum Phrase {
 
     public static String getPhraseSelector(Phrase phrase, String selector) {
         String translatedPhrase = phrase.getTranslatedPhrase();
+        // Return empty string if translated phrase is null
+        if (translatedPhrase == null) {
+            return "";
+        }
+
         Pattern phrasePattern = Pattern.compile("(\\{[a-zA-Z\u4e00-\u9fa5| ]+})");
         Matcher patternMatch = phrasePattern.matcher(translatedPhrase);
         String match = "";

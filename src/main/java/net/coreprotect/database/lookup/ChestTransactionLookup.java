@@ -22,8 +22,12 @@ import net.coreprotect.database.statement.UserStatement;
 import net.coreprotect.language.Phrase;
 import net.coreprotect.language.Selector;
 import net.coreprotect.listener.channel.PluginChannelListener;
+import net.coreprotect.utility.ChatUtils;
 import net.coreprotect.utility.Color;
-import net.coreprotect.utility.Util;
+import net.coreprotect.utility.ItemUtils;
+import net.coreprotect.utility.MaterialUtils;
+import net.coreprotect.utility.StringUtils;
+import net.coreprotect.utility.WorldUtils;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -66,14 +70,14 @@ public class ChestTransactionLookup {
             int y2 = (int) Math.ceil(l.getY());
             int z2 = (int) Math.ceil(l.getZ());
             long time = (System.currentTimeMillis() / 1000L);
-            int worldId = Util.getWorldId(l.getWorld().getName());
+            int worldId = WorldUtils.getWorldId(l.getWorld().getName());
             int count = 0;
             int rowMax = page * limit;
             int pageStart = rowMax - limit;
 
-            String query = "SELECT COUNT(*) as count from " + ConfigHandler.prefix + "container " + Util.getWidIndex("container") + "WHERE wid = '" + worldId + "' AND (x = '" + x + "' OR x = '" + x2 + "') AND (z = '" + z + "' OR z = '" + z2 + "') AND y = '" + y + "' LIMIT 0, 1";
+            String query = "SELECT COUNT(*) as count from " + ConfigHandler.prefix + "container " + WorldUtils.getWidIndex("container") + "WHERE wid = '" + worldId + "' AND (x = '" + x + "' OR x = '" + x2 + "') AND (z = '" + z + "' OR z = '" + z2 + "') AND y = '" + y + "' LIMIT 0, 1";
             if (exact) {
-                query = "SELECT COUNT(*) as count from " + ConfigHandler.prefix + "container " + Util.getWidIndex("container") + "WHERE wid = '" + worldId + "' AND (x = '" + l.getBlockX() + "') AND (z = '" + l.getBlockZ() + "') AND y = '" + y + "' LIMIT 0, 1";
+                query = "SELECT COUNT(*) as count from " + ConfigHandler.prefix + "container " + WorldUtils.getWidIndex("container") + "WHERE wid = '" + worldId + "' AND (x = '" + l.getBlockX() + "') AND (z = '" + l.getBlockZ() + "') AND y = '" + y + "' LIMIT 0, 1";
             }
             ResultSet results = statement.executeQuery(query);
 
@@ -84,9 +88,9 @@ public class ChestTransactionLookup {
 
             int totalPages = (int) Math.ceil(count / (limit + 0.0));
 
-            query = "SELECT time,user,action,type,data,amount,metadata,rolled_back FROM " + ConfigHandler.prefix + "container " + Util.getWidIndex("container") + "WHERE wid = '" + worldId + "' AND (x = '" + x + "' OR x = '" + x2 + "') AND (z = '" + z + "' OR z = '" + z2 + "') AND y = '" + y + "' ORDER BY rowid DESC LIMIT " + pageStart + ", " + limit + "";
+            query = "SELECT time,user,action,type,data,amount,metadata,rolled_back FROM " + ConfigHandler.prefix + "container " + WorldUtils.getWidIndex("container") + "WHERE wid = '" + worldId + "' AND (x = '" + x + "' OR x = '" + x2 + "') AND (z = '" + z + "' OR z = '" + z2 + "') AND y = '" + y + "' ORDER BY rowid DESC LIMIT " + pageStart + ", " + limit + "";
             if (exact) {
-                query = "SELECT time,user,action,type,data,amount,metadata,rolled_back FROM " + ConfigHandler.prefix + "container " + Util.getWidIndex("container") + "WHERE wid = '" + worldId + "' AND (x = '" + l.getBlockX() + "') AND (z = '" + l.getBlockZ() + "') AND y = '" + y + "' ORDER BY rowid DESC LIMIT " + pageStart + ", " + limit + "";
+                query = "SELECT time,user,action,type,data,amount,metadata,rolled_back FROM " + ConfigHandler.prefix + "container " + WorldUtils.getWidIndex("container") + "WHERE wid = '" + worldId + "' AND (x = '" + l.getBlockX() + "') AND (z = '" + l.getBlockZ() + "') AND y = '" + y + "' ORDER BY rowid DESC LIMIT " + pageStart + ", " + limit + "";
             }
             results = statement.executeQuery(query);
             while (results.next()) {
@@ -98,17 +102,17 @@ public class ChestTransactionLookup {
                 int resultAmount = results.getInt("amount");
                 int resultRolledBack = results.getInt("rolled_back");
                 byte[] resultMetadata = results.getBytes("metadata");
-                Pair<HoverEvent<HoverEvent.ShowItem>, ItemStack> hoverEventWithItem = Util.getHoverEventWithItem(resultMetadata, resultType, resultAmount);
+                Pair<HoverEvent<HoverEvent.ShowItem>, ItemStack> hoverEventWithItem = ItemUtils.getHoverEventWithItem(resultMetadata, resultType, resultAmount);
 
                 if (ConfigHandler.playerIdCacheReversed.get(resultUserId) == null) {
                     UserStatement.loadName(statement.getConnection(), resultUserId);
                 }
 
                 String resultUser = ConfigHandler.playerIdCacheReversed.get(resultUserId);
-                String timeAgo = Util.getTimeSince(resultTime, time, true);
+                String timeAgo = ChatUtils.getTimeSince(resultTime, time, true);
 
                 if (!found) {
-                    Chat.sendComponent(commandSender, (Color.WHITE + "----- " + Color.DARK_AQUA + Phrase.build(Phrase.CONTAINER_HEADER) + Color.WHITE + " ----- " + Util.getCoordinates(command, worldId, x, y, z, false, false)));
+                    Chat.sendComponent(commandSender, (Color.WHITE + "----- " + Color.DARK_AQUA + Phrase.build(Phrase.CONTAINER_HEADER) + Color.WHITE + " ----- " + ChatUtils.getCoordinates(command, worldId, x, y, z, false, false)));
                 }
                 found = true;
 
@@ -119,12 +123,12 @@ public class ChestTransactionLookup {
                     rbFormat = Color.STRIKETHROUGH;
                 }
 
-                Material resultMaterial = Util.getType(resultType);
+                Material resultMaterial = MaterialUtils.getType(resultType);
                 if (resultMaterial == null) {
                     resultMaterial = Material.AIR;
                 }
                 String target = resultMaterial.name().toLowerCase(Locale.ROOT);
-                target = Util.nameFilter(target, resultData);
+                target = StringUtils.nameFilter(target, resultData);
                 if (target.length() > 0) {
                     target = "minecraft:" + target.toLowerCase(Locale.ROOT) + "";
                 }
@@ -134,17 +138,9 @@ public class ChestTransactionLookup {
                     target = target.split(":")[1];
                 }
 
-                Component nameComponent = LegacyComponentSerializer.legacySection().deserialize(Color.DARK_AQUA + rbFormat + ItemCN.getItemCN(target, false));
-                if (hoverEventWithItem.right() != null) {
-                    if (hoverEventWithItem.right().hasItemMeta()) {
-                        final Component metaDisplayName = hoverEventWithItem.right().getItemMeta().displayName();
-                        if (metaDisplayName != null) {
-                            nameComponent = Component.text("[").append(metaDisplayName).append(Component.text("]"));
-                            if (rbFormat.equals(Color.STRIKETHROUGH)) {
-                                nameComponent = nameComponent.decorate(TextDecoration.STRIKETHROUGH);
-                            }
-                        }
-                    }
+                Component nameComponent = hoverEventWithItem.right().effectiveName();
+                if (rbFormat.equals(Color.STRIKETHROUGH)) {
+                    nameComponent = nameComponent.decorate(TextDecoration.STRIKETHROUGH);
                 }
 
                 String[] timeagoSplit = timeAgo.split("\\|", 3);
@@ -155,7 +151,7 @@ public class ChestTransactionLookup {
                                                    .append(LegacyComponentSerializer.legacySection().deserialize(Color.DARK_AQUA + rbFormat + resultUser + Color.WHITE + rbFormat + " " + Phrase.getPhraseSelector(Phrase.LOOKUP_CONTAINER, selector) + " "))
                                                    .append(nameComponent.hoverEvent(hoverEventWithItem.left()))
                                                    .append(LegacyComponentSerializer.legacySection().deserialize(Color.WHITE + rbFormat + "x" + resultAmount + ".")));
-                // Chat.sendComponent(commandSender, (timeAgo + " " + tag + " " + Phrase.build(Phrase.LOOKUP_CONTAINER, Color.DARK_AQUA + rbFormat + resultUser + Color.WHITE + rbFormat, "x" + resultAmount, Util.createTooltip(Color.DARK_AQUA + rbFormat + ItemCN.getItemCN(target), tooltip) + Color.WHITE, selector)));
+                // Chat.sendComponent(commandSender, (timeAgo + " " + tag + " " + Phrase.build(Phrase.LOOKUP_CONTAINER, Color.DARK_AQUA + rbFormat + resultUser + Color.WHITE + rbFormat, "x" + resultAmount, ChatUtils.createTooltip(Color.DARK_AQUA + rbFormat + ItemCN.getItemCN(target), tooltip) + Color.WHITE, selector)));
 
                 PluginChannelListener.getInstance().sendData(commandSender, resultTime, Phrase.LOOKUP_CONTAINER, selector, resultUser, target, resultAmount, x, y, z, worldId, rbFormat, true, tag.contains("+"));
             }
@@ -164,7 +160,7 @@ public class ChestTransactionLookup {
             if (found) {
                 if (count > limit) {
                     Chat.sendComponent(commandSender, Color.WHITE + "-----");
-                    Chat.sendComponent(commandSender, Util.getPageNavigation(command, page, totalPages));
+                    Chat.sendComponent(commandSender, ChatUtils.getPageNavigation(command, page, totalPages));
                 }
             }
             else {

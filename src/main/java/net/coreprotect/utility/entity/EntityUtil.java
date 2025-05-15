@@ -37,6 +37,7 @@ import org.bukkit.entity.Parrot;
 import org.bukkit.entity.Parrot.Variant;
 import org.bukkit.entity.Phantom;
 import org.bukkit.entity.Pig;
+import org.bukkit.entity.Piglin;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Raider;
 import org.bukkit.entity.Sheep;
@@ -48,6 +49,7 @@ import org.bukkit.entity.TropicalFish;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Villager.Profession;
 import org.bukkit.entity.Wolf;
+import org.bukkit.entity.Zoglin;
 import org.bukkit.entity.Zombie;
 import org.bukkit.entity.ZombieVillager;
 import org.bukkit.inventory.ItemStack;
@@ -57,10 +59,10 @@ import org.bukkit.inventory.meta.LeatherArmorMeta;
 
 import net.coreprotect.CoreProtect;
 import net.coreprotect.bukkit.BukkitAdapter;
-import net.coreprotect.database.Rollback;
+import net.coreprotect.database.rollback.Rollback;
 import net.coreprotect.thread.CacheHandler;
 import net.coreprotect.thread.Scheduler;
-import net.coreprotect.utility.Util;
+import net.coreprotect.utility.WorldUtils;
 
 public class EntityUtil {
 
@@ -96,7 +98,7 @@ public class EntityUtil {
                 }
 
                 int unixtimestamp = (int) (System.currentTimeMillis() / 1000L);
-                int wid = Util.getWorldId(block.getWorld().getName());
+                int wid = WorldUtils.getWorldId(block.getWorld().getName());
                 String token = "" + block.getX() + "." + block.getY() + "." + block.getZ() + "." + wid + "." + type.name() + "";
                 CacheHandler.entityCache.put(token, new Object[] { unixtimestamp, entity.getEntityId() });
 
@@ -166,7 +168,13 @@ public class EntityUtil {
                     for (Object value : attributes) {
                         @SuppressWarnings("unchecked")
                         List<Object> attributeData = (List<Object>) value;
-                        Attribute attribute = (Attribute) attributeData.get(0);
+                        Attribute attribute = null;
+                        if (attributeData.get(0) instanceof Attribute) {
+                            attribute = (Attribute) attributeData.get(0);
+                        }
+                        else {
+                            attribute = (Attribute) BukkitAdapter.ADAPTER.getRegistryValue((String) attributeData.get(0), Attribute.class);
+                        }
                         Double baseValue = (Double) attributeData.get(1);
                         @SuppressWarnings("unchecked")
                         List<Object> attributeModifiers = (List<Object>) attributeData.get(2);
@@ -231,12 +239,19 @@ public class EntityUtil {
                     else if (entity instanceof Cat) {
                         Cat cat = (Cat) entity;
                         if (count == 0) {
+                            if (value instanceof String) {
+                                value = BukkitAdapter.ADAPTER.getRegistryValue((String) value, Cat.Type.class);
+                            }
                             Cat.Type set = (Cat.Type) value;
                             cat.setCatType(set);
                         }
                         else if (count == 1) {
                             DyeColor set = (DyeColor) value;
                             cat.setCollarColor(set);
+                        }
+                        else if (count == 2) {
+                            boolean set = (Boolean) value;
+                            cat.setSitting(set);
                         }
                     }
                     else if (entity instanceof Fox) {
@@ -327,13 +342,19 @@ public class EntityUtil {
                         if (count == 0) {
                             if (abstractVillager instanceof Villager) {
                                 Villager villager = (Villager) abstractVillager;
+                                if (value instanceof String) {
+                                    value = BukkitAdapter.ADAPTER.getRegistryValue((String) value, Profession.class);
+                                }
                                 Profession set = (Profession) value;
                                 villager.setProfession(set);
                             }
                         }
                         else if (count == 1) {
-                            if (abstractVillager instanceof Villager && value instanceof Villager.Type) {
+                            if (abstractVillager instanceof Villager && (value instanceof Villager.Type || value instanceof String)) {
                                 Villager villager = (Villager) abstractVillager;
+                                if (value instanceof String) {
+                                    value = BukkitAdapter.ADAPTER.getRegistryValue((String) value, Villager.Type.class);
+                                }
                                 Villager.Type set = (Villager.Type) value;
                                 villager.setVillagerType(set);
                             }
@@ -419,6 +440,9 @@ public class EntityUtil {
                             DyeColor set = (DyeColor) value;
                             wolf.setCollarColor(set);
                         }
+                        else if (count == 2) {
+                            BukkitAdapter.ADAPTER.setWolfVariant(wolf, value);
+                        }
                     }
                     else if (entity instanceof ZombieVillager) {
                         ZombieVillager zombieVillager = (ZombieVillager) entity;
@@ -427,6 +451,9 @@ public class EntityUtil {
                             zombieVillager.setBaby(set);
                         }
                         else if (count == 1) {
+                            if (value instanceof String) {
+                                value = BukkitAdapter.ADAPTER.getRegistryValue((String) value, Profession.class);
+                            }
                             Profession set = (Profession) value;
                             zombieVillager.setVillagerProfession(set);
                         }
@@ -547,6 +574,20 @@ public class EntityUtil {
                         else if (count == 2) {
                             boolean set = (Boolean) value;
                             bee.setHasStung(set);
+                        }
+                    }
+                    else if (entity instanceof Piglin) {
+                        Piglin piglin = (Piglin) entity;
+                        if (count == 0) {
+                            boolean set = (Boolean) value;
+                            piglin.setBaby(set);
+                        }
+                    }
+                    else if (entity instanceof Zoglin) {
+                        Zoglin zoglin = (Zoglin) entity;
+                        if (count == 0) {
+                            boolean set = (Boolean) value;
+                            zoglin.setBaby(set);
                         }
                     }
                     else {

@@ -8,11 +8,16 @@ import java.sql.ResultSetMetaData;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
+import net.coreprotect.bukkit.BukkitAdapter;
 import net.coreprotect.config.Config;
 import net.coreprotect.config.ConfigHandler;
 import net.coreprotect.consumer.Consumer;
@@ -23,22 +28,31 @@ import net.coreprotect.patch.Patch;
 import net.coreprotect.utility.Chat;
 import net.coreprotect.utility.ChatMessage;
 import net.coreprotect.utility.Color;
-import net.coreprotect.utility.Util;
+import net.coreprotect.utility.EntityUtils;
+import net.coreprotect.utility.MaterialUtils;
+import net.coreprotect.utility.VersionUtils;
 
 public class PurgeCommand extends Consumer {
 
     protected static void runCommand(final CommandSender player, boolean permission, String[] args) {
         int resultc = args.length;
-        Location location = CommandHandler.parseLocation(player, args);
-        final Integer[] argRadius = CommandHandler.parseRadius(args, player, location);
-        final long[] argTime = CommandHandler.parseTime(args);
-        final int argWid = CommandHandler.parseWorld(args, false, false);
-        final List<Integer> argAction = CommandHandler.parseAction(args);
+        Location location = CommandParser.parseLocation(player, args);
+        final Integer[] argRadius = CommandParser.parseRadius(args, player, location);
+        final List<Integer> argAction = CommandParser.parseAction(args);
+        final List<Object> argBlocks = CommandParser.parseRestricted(player, args, argAction);
+        final Map<Object, Boolean> argExclude = CommandParser.parseExcluded(player, args, argAction);
+        final List<String> argExcludeUsers = CommandParser.parseExcludedUsers(player, args);
+        final long[] argTime = CommandParser.parseTime(args);
+        final int argWid = CommandParser.parseWorld(args, false, false);
         final List<Integer> supportedActions = Arrays.asList();
         long startTime = argTime[1] > 0 ? argTime[0] : 0;
         long endTime = argTime[1] > 0 ? argTime[1] : argTime[0];
 
-        if (ConfigHandler.converterRunning) {
+        if (argBlocks == null || argExclude == null || argExcludeUsers == null) {
+            return;
+        }
+
+        if (ConfigHandler.converterRunning || ConfigHandler.migrationRunning) {
             Chat.sendMessage(player, Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + Phrase.build(Phrase.UPGRADE_IN_PROGRESS));
             return;
         }
@@ -63,8 +77,16 @@ public class PurgeCommand extends Consumer {
             return;
         }
         if (argWid == -1) {
-            String worldName = CommandHandler.parseWorldName(args, false);
+            String worldName = CommandParser.parseWorldName(args, false);
             Chat.sendMessage(player, new ChatMessage(Phrase.build(Phrase.WORLD_NOT_FOUND, worldName)).build());
+            return;
+        }
+        if (player instanceof Player && endTime < 2592000) {
+            Chat.sendMessage(player, Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + Phrase.build(Phrase.PURGE_MINIMUM_TIME, "30", Selector.FIRST)); // 30 days
+            return;
+        }
+        else if (endTime < 86400) {
+            Chat.sendMessage(player, Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + Phrase.build(Phrase.PURGE_MINIMUM_TIME, "24", Selector.SECOND)); // 24 hours
             return;
         }
         for (int action : argAction) {
@@ -74,12 +96,70 @@ public class PurgeCommand extends Consumer {
                 return;
             }
         }
-        if (player instanceof Player && endTime < 2592000) {
-            Chat.sendMessage(player, Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + Phrase.build(Phrase.PURGE_MINIMUM_TIME, "30", Selector.FIRST)); // 30 days
-            return;
+
+        StringBuilder restrict = new StringBuilder();
+        String includeBlock = "";
+        String includeEntity = "";
+        boolean hasBlock = false;
+        boolean item = false;
+        boolean entity = false;
+        int restrictCount = 0;
+
+        if (argBlocks.size() > 0) {
+            StringBuilder includeListMaterial = new StringBuilder();
+            StringBuilder includeListEntity = new StringBuilder();
+
+            for (Object restrictTarget : argBlocks) {
+                String targetName = "";
+
+                if (restrictTarget instanceof Material) {
+                    targetName = ((Material) restrictTarget).name();
+                    if (includeListMaterial.length() == 0) {
+                        includeListMaterial = includeListMaterial.append(MaterialUtils.getBlockId(targetName, false));
+                    }
+                    else {
+                        includeListMaterial.append(",").append(MaterialUtils.getBlockId(targetName, false));
+                    }
+
+                    /* Include legacy IDs */
+                    int legacyId = BukkitAdapter.ADAPTER.getLegacyBlockId((Material) restrictTarget);
+                    if (legacyId > 0) {
+                        includeListMaterial.append(",").append(legacyId);
+                    }
+
+                    targetName = ((Material) restrictTarget).name().toLowerCase(Locale.ROOT);
+                    item = (!item ? !(((Material) restrictTarget).isBlock()) : item);
+                    hasBlock = true;
+                }
+                else if (restrictTarget instanceof EntityType) {
+                    targetName = ((EntityType) restrictTarget).name();
+                    if (includeListEntity.length() == 0) {
+                        includeListEntity = includeListEntity.append(EntityUtils.getEntityId(targetName, false));
+                    }
+                    else {
+                        includeListEntity.append(",").append(EntityUtils.getEntityId(targetName, false));
+                    }
+
+                    targetName = ((EntityType) restrictTarget).name().toLowerCase(Locale.ROOT);
+                    entity = true;
+                }
+
+                if (restrictCount == 0) {
+                    restrict = restrict.append("" + targetName + "");
+                }
+                else {
+                    restrict.append(", ").append(targetName);
+                }
+
+                restrictCount++;
+            }
+
+            includeBlock = includeListMaterial.toString();
+            includeEntity = includeListEntity.toString();
         }
-        else if (endTime < 86400) {
-            Chat.sendMessage(player, Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + Phrase.build(Phrase.PURGE_MINIMUM_TIME, "24", Selector.SECOND)); // 24 hours
+
+        if (entity) {
+            Chat.sendMessage(player, Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + Phrase.build(Phrase.ACTION_NOT_SUPPORTED));
             return;
         }
 
@@ -90,7 +170,12 @@ public class PurgeCommand extends Consumer {
                 break;
             }
         }
+
+        final StringBuilder restrictTargets = restrict;
+        final String includeBlockFinal = includeBlock;
         final boolean optimize = optimizeCheck;
+        final boolean hasBlockRestriction = hasBlock;
+        final int restrictCountFinal = restrictCount;
 
         class BasicThread implements Runnable {
 
@@ -117,12 +202,17 @@ public class PurgeCommand extends Consumer {
                     }
 
                     if (argWid > 0) {
-                        String worldName = CommandHandler.parseWorldName(args, false);
+                        String worldName = CommandParser.parseWorldName(args, false);
                         Chat.sendGlobalMessage(player, Phrase.build(Phrase.PURGE_STARTED, worldName));
                     }
                     else {
                         Chat.sendGlobalMessage(player, Phrase.build(Phrase.PURGE_STARTED, "#global"));
                     }
+
+                    if (hasBlockRestriction) {
+                        Chat.sendGlobalMessage(player, Phrase.build(Phrase.ROLLBACK_INCLUDE, restrictTargets.toString(), Selector.FIRST, Selector.FIRST, (restrictCountFinal == 1 ? Selector.FIRST : Selector.SECOND))); // include
+                    }
+
                     Chat.sendGlobalMessage(player, Phrase.build(Phrase.PURGE_NOTICE_1));
                     Chat.sendGlobalMessage(player, Phrase.build(Phrase.PURGE_NOTICE_2));
 
@@ -146,7 +236,7 @@ public class PurgeCommand extends Consumer {
                     }
 
                     Integer[] lastVersion = Patch.getDatabaseVersion(connection, true);
-                    boolean newVersion = Util.newVersion(lastVersion, Util.getInternalPluginVersion());
+                    boolean newVersion = VersionUtils.newVersion(lastVersion, VersionUtils.getInternalPluginVersion());
                     if (newVersion && !ConfigHandler.EDITION_BRANCH.contains("-dev")) {
                         Chat.sendGlobalMessage(player, Phrase.build(Phrase.PURGE_FAILED));
                         Consumer.isPaused = false;
@@ -167,11 +257,12 @@ public class PurgeCommand extends Consumer {
                             }
                         }
 
-                        Database.createDatabaseTables(purgePrefix, true);
+                        Database.createDatabaseTables(purgePrefix, false, null, Config.getGlobal().MYSQL, true);
                     }
 
                     List<String> purgeTables = Arrays.asList("sign", "container", "item", "skull", "session", "chat", "command", "entity", "block");
                     List<String> worldTables = Arrays.asList("sign", "container", "item", "session", "chat", "command", "block");
+                    List<String> restrictTables = Arrays.asList("block");
                     List<String> excludeTables = Arrays.asList("database_lock"); // don't insert data into these tables
                     for (String table : ConfigHandler.databaseTables) {
                         String tableName = table.replaceAll("_", " ");
@@ -196,13 +287,22 @@ public class PurgeCommand extends Consumer {
                             boolean error = false;
                             if (!excludeTables.contains(table)) {
                                 try {
+                                    boolean purge = true;
                                     String timeLimit = "";
                                     if (purgeTables.contains(table)) {
-                                        if (argWid > 0 && worldTables.contains(table)) {
-                                            timeLimit = " WHERE (wid = '" + argWid + "' AND (time >= '" + timeEnd + "' OR time < '" + timeStart + "')) OR wid != '" + argWid + "'";
+                                        String blockRestriction = "(";
+                                        if (hasBlockRestriction && restrictTables.contains(table)) {
+                                            blockRestriction = "type NOT IN(" + includeBlockFinal + ") OR (type IN(" + includeBlockFinal + ") AND ";
                                         }
-                                        else if (argWid == 0) {
-                                            timeLimit = " WHERE (time >= '" + timeEnd + "' OR time < '" + timeStart + "')";
+                                        else if (hasBlockRestriction) {
+                                            purge = false;
+                                        }
+
+                                        if (argWid > 0 && worldTables.contains(table)) {
+                                            timeLimit = " WHERE (" + blockRestriction + "wid = '" + argWid + "' AND (time >= '" + timeEnd + "' OR time < '" + timeStart + "'))) OR (wid != '" + argWid + "')";
+                                        }
+                                        else if (argWid == 0 && purge) {
+                                            timeLimit = " WHERE " + blockRestriction + "(time >= '" + timeEnd + "' OR time < '" + timeStart + "'))";
                                         }
                                     }
                                     query = "INSERT INTO " + purgePrefix + table + " SELECT " + columns + " FROM " + ConfigHandler.prefix + table + timeLimit;
@@ -256,6 +356,14 @@ public class PurgeCommand extends Consumer {
                                 try {
                                     boolean purge = purgeTables.contains(table);
 
+                                    String blockRestriction = "";
+                                    if (hasBlockRestriction && restrictTables.contains(table)) {
+                                        blockRestriction = "type IN(" + includeBlockFinal + ") AND ";
+                                    }
+                                    else if (hasBlockRestriction) {
+                                        purge = false;
+                                    }
+
                                     String worldRestriction = "";
                                     if (argWid > 0 && worldTables.contains(table)) {
                                         worldRestriction = " AND wid = '" + argWid + "'";
@@ -265,7 +373,7 @@ public class PurgeCommand extends Consumer {
                                     }
 
                                     if (purge) {
-                                        query = "DELETE FROM " + purgePrefix + table + " WHERE time < '" + timeEnd + "' AND time >= '" + timeStart + "'" + worldRestriction;
+                                        query = "DELETE FROM " + purgePrefix + table + " WHERE " + blockRestriction + "time < '" + timeEnd + "' AND time >= '" + timeStart + "'" + worldRestriction;
                                         preparedStmt = connection.prepareStatement(query);
                                         preparedStmt.execute();
                                         preparedStmt.close();
@@ -315,6 +423,14 @@ public class PurgeCommand extends Consumer {
                             try {
                                 boolean purge = purgeTables.contains(table);
 
+                                String blockRestriction = "";
+                                if (hasBlockRestriction && restrictTables.contains(table)) {
+                                    blockRestriction = "type IN(" + includeBlockFinal + ") AND ";
+                                }
+                                else if (hasBlockRestriction) {
+                                    purge = false;
+                                }
+
                                 String worldRestriction = "";
                                 if (argWid > 0 && worldTables.contains(table)) {
                                     worldRestriction = " AND wid = '" + argWid + "'";
@@ -324,7 +440,7 @@ public class PurgeCommand extends Consumer {
                                 }
 
                                 if (purge) {
-                                    query = "DELETE FROM " + ConfigHandler.prefix + table + " WHERE time < '" + timeEnd + "' AND time >= '" + timeStart + "'" + worldRestriction;
+                                    query = "DELETE FROM " + ConfigHandler.prefix + table + " WHERE " + blockRestriction + "time < '" + timeEnd + "' AND time >= '" + timeStart + "'" + worldRestriction;
                                     preparedStmt = connection.prepareStatement(query);
                                     preparedStmt.execute();
                                     removed = removed + preparedStmt.getUpdateCount();
