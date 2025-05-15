@@ -10,7 +10,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import com.kiocg.ItemCN;
-import it.unimi.dsi.fastutil.Pair;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -295,7 +294,7 @@ public class StandardLookupThread implements Runnable {
                                 Material blockType = ItemUtils.itemFilter(MaterialUtils.getType(dtype), (Integer.parseInt(data[13]) == 0));
                                 String dname = StringUtils.nameFilter(blockType.name().toLowerCase(Locale.ROOT), ddata);
                                 byte[] metadata = data[11] == null ? null : data[11].getBytes(StandardCharsets.ISO_8859_1);
-                                Pair<HoverEvent<HoverEvent.ShowItem>, ItemStack> hoverEventWithItem = ItemUtils.getHoverEventWithItem(metadata, dtype, amount);
+                                ItemStack rollbackItemStack = ItemUtils.getRollbackItemStack(metadata, dtype, amount);
 
                                 String selector = Selector.FIRST;
                                 String tag = Color.WHITE + "-";
@@ -324,7 +323,7 @@ public class StandardLookupThread implements Runnable {
                                     tag = (daction == 0 ? Color.GREEN + "+" : Color.RED + "-");
                                 }
 
-                                Component nameComponent = hoverEventWithItem.right().effectiveName();
+                                Component nameComponent = rollbackItemStack.effectiveName();
                                 if (rbd.equals(Color.STRIKETHROUGH)) {
                                     nameComponent = nameComponent.decorate(TextDecoration.STRIKETHROUGH);
                                 }
@@ -335,7 +334,7 @@ public class StandardLookupThread implements Runnable {
                                                                                               .hoverEvent(HoverEvent.showText(LegacyComponentSerializer.legacySection().deserialize(timeagoSplit[1]))))
                                                             .append(LegacyComponentSerializer.legacySection().deserialize(" " + tag + " "))
                                                             .append(LegacyComponentSerializer.legacySection().deserialize(Color.DARK_AQUA + rbd + dplayer + Color.WHITE + rbd + " " + Phrase.getPhraseSelector(Phrase.LOOKUP_CONTAINER, selector) + " "))
-                                                            .append(nameComponent.hoverEvent(hoverEventWithItem.left()))
+                                                            .append(nameComponent.hoverEvent(rollbackItemStack.asHoverEvent()))
                                                             .append(LegacyComponentSerializer.legacySection().deserialize(Color.WHITE + rbd + "x" + amount + ".")));
                                 // Chat.sendComponent(player, timeago + " " + tag + " " + Phrase.build(Phrase.LOOKUP_CONTAINER, Color.DARK_AQUA + rbd + dplayer + Color.WHITE + rbd, "x" + amount, ChatUtils.createTooltip(Color.DARK_AQUA + rbd + ItemCN.getItemCN(dname), tooltip) + Color.WHITE, selector));
 
@@ -407,7 +406,7 @@ public class StandardLookupThread implements Runnable {
                                 String action = "a:block";
                                 if (actions.contains(4) || actions.contains(5) || actions.contains(11) || amount > -1) {
                                     byte[] metadata = data[11] == null ? null : data[11].getBytes(StandardCharsets.ISO_8859_1);
-                                    Pair<HoverEvent<HoverEvent.ShowItem>, ItemStack> hoverEventWithItem = ItemUtils.getHoverEventWithItem(metadata, dtype, amount);
+                                    ItemStack rollbackItemStack = ItemUtils.getRollbackItemStack(metadata, dtype, amount);
 
                                     if (daction == 2 || daction == 3) {
                                         phrase = Phrase.LOOKUP_ITEM; // {picked up|dropped}
@@ -434,7 +433,7 @@ public class StandardLookupThread implements Runnable {
                                         action = "a:container";
                                     }
 
-                                    Component nameComponent = hoverEventWithItem.right().effectiveName();
+                                    Component nameComponent = rollbackItemStack.effectiveName();
                                     if (rbd.equals(Color.STRIKETHROUGH)) {
                                         nameComponent = nameComponent.decorate(TextDecoration.STRIKETHROUGH);
                                     }
@@ -445,7 +444,7 @@ public class StandardLookupThread implements Runnable {
                                                                                                   .hoverEvent(HoverEvent.showText(LegacyComponentSerializer.legacySection().deserialize(timeagoSplit[1]))))
                                                                 .append(LegacyComponentSerializer.legacySection().deserialize(" " + tag + " "))
                                                                 .append(LegacyComponentSerializer.legacySection().deserialize(Color.DARK_AQUA + rbd + dplayer + Color.WHITE + rbd + " " + Phrase.getPhraseSelector(phrase, selector) + " "))
-                                                                .append(nameComponent.hoverEvent(hoverEventWithItem.left()))
+                                                                .append(nameComponent.hoverEvent(rollbackItemStack.asHoverEvent()))
                                                                 .append(LegacyComponentSerializer.legacySection().deserialize(Color.WHITE + rbd + "x" + amount + ".")));
                                     // Chat.sendComponent(player, timeago + " " + tag + " " + Phrase.build(phrase, Color.DARK_AQUA + rbd + dplayer + Color.WHITE + rbd, "x" + amount, ChatUtils.createTooltip(Color.DARK_AQUA + rbd + ItemCN.getItemCN(dname), tooltip) + Color.WHITE, selector));
 

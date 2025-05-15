@@ -6,8 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import com.kiocg.ItemCN;
-import it.unimi.dsi.fastutil.Pair;
 import net.coreprotect.utility.Chat;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -33,18 +31,18 @@ import org.bukkit.inventory.ItemStack;
 
 public class ChestTransactionLookup {
 
-    public static List<String> performLookup(String command, Statement statement, Location l, CommandSender commandSender, int page, int limit, boolean exact) {
+    public static void performLookup(String command, Statement statement, Location l, CommandSender commandSender, int page, int limit, boolean exact) {
         // KioCG start
         if (commandSender instanceof Player) {
             ((Player) commandSender).sendBlockHighlight(l, 3000, org.bukkit.Color.GREEN, 127);
         }
         // KioCG end
 
-        // List<String> result = new ArrayList<>();
+        List<Object> result = new ArrayList<>();
 
         try {
             if (l == null) {
-                return List.of();
+                return;
             }
 
             if (command == null) {
@@ -102,7 +100,7 @@ public class ChestTransactionLookup {
                 int resultAmount = results.getInt("amount");
                 int resultRolledBack = results.getInt("rolled_back");
                 byte[] resultMetadata = results.getBytes("metadata");
-                Pair<HoverEvent<HoverEvent.ShowItem>, ItemStack> hoverEventWithItem = ItemUtils.getHoverEventWithItem(resultMetadata, resultType, resultAmount);
+                ItemStack rollbackItemStack = ItemUtils.getRollbackItemStack(resultMetadata, resultType, resultAmount);
 
                 if (ConfigHandler.playerIdCacheReversed.get(resultUserId) == null) {
                     UserStatement.loadName(statement.getConnection(), resultUserId);
@@ -112,7 +110,7 @@ public class ChestTransactionLookup {
                 String timeAgo = ChatUtils.getTimeSince(resultTime, time, true);
 
                 if (!found) {
-                    Chat.sendComponent(commandSender, (Color.WHITE + "----- " + Color.DARK_AQUA + Phrase.build(Phrase.CONTAINER_HEADER) + Color.WHITE + " ----- " + ChatUtils.getCoordinates(command, worldId, x, y, z, false, false)));
+                    result.add(new StringBuilder(Color.WHITE + "----- " + Color.DARK_AQUA + Phrase.build(Phrase.CONTAINER_HEADER) + Color.WHITE + " ----- " + ChatUtils.getCoordinates(command, worldId, x, y, z, false, false)).toString());
                 }
                 found = true;
 
@@ -138,20 +136,20 @@ public class ChestTransactionLookup {
                     target = target.split(":")[1];
                 }
 
-                Component nameComponent = hoverEventWithItem.right().effectiveName();
+                Component nameComponent = rollbackItemStack.effectiveName();
                 if (rbFormat.equals(Color.STRIKETHROUGH)) {
                     nameComponent = nameComponent.decorate(TextDecoration.STRIKETHROUGH);
                 }
 
                 String[] timeagoSplit = timeAgo.split("\\|", 3);
-                commandSender.sendMessage(Component.empty()
-                                                   .append(LegacyComponentSerializer.legacySection().deserialize(timeagoSplit[2].replace(Chat.COMPONENT_TAG_CLOSE, ""))
-                                                                                    .hoverEvent(HoverEvent.showText(LegacyComponentSerializer.legacySection().deserialize(timeagoSplit[1]))))
-                                                   .append(LegacyComponentSerializer.legacySection().deserialize(" " + tag + " "))
-                                                   .append(LegacyComponentSerializer.legacySection().deserialize(Color.DARK_AQUA + rbFormat + resultUser + Color.WHITE + rbFormat + " " + Phrase.getPhraseSelector(Phrase.LOOKUP_CONTAINER, selector) + " "))
-                                                   .append(nameComponent.hoverEvent(hoverEventWithItem.left()))
-                                                   .append(LegacyComponentSerializer.legacySection().deserialize(Color.WHITE + rbFormat + "x" + resultAmount + ".")));
-                // Chat.sendComponent(commandSender, (timeAgo + " " + tag + " " + Phrase.build(Phrase.LOOKUP_CONTAINER, Color.DARK_AQUA + rbFormat + resultUser + Color.WHITE + rbFormat, "x" + resultAmount, ChatUtils.createTooltip(Color.DARK_AQUA + rbFormat + ItemCN.getItemCN(target), tooltip) + Color.WHITE, selector)));
+                result.add(Component.empty()
+                                    .append(LegacyComponentSerializer.legacySection().deserialize(timeagoSplit[2].replace(Chat.COMPONENT_TAG_CLOSE, ""))
+                                                                     .hoverEvent(HoverEvent.showText(LegacyComponentSerializer.legacySection().deserialize(timeagoSplit[1]))))
+                                    .append(LegacyComponentSerializer.legacySection().deserialize(" " + tag + " "))
+                                    .append(LegacyComponentSerializer.legacySection().deserialize(Color.DARK_AQUA + rbFormat + resultUser + Color.WHITE + rbFormat + " " + Phrase.getPhraseSelector(Phrase.LOOKUP_CONTAINER, selector) + " "))
+                                    .append(nameComponent.hoverEvent(rollbackItemStack.asHoverEvent()))
+                                    .append(LegacyComponentSerializer.legacySection().deserialize(Color.WHITE + rbFormat + "x" + resultAmount + ".")));
+                // result.add(new StringBuilder(timeAgo + " " + tag + " " + Phrase.build(Phrase.LOOKUP_CONTAINER, Color.DARK_AQUA + rbFormat + resultUser + Color.WHITE + rbFormat, "x" + resultAmount, ChatUtils.createTooltip(Color.DARK_AQUA + rbFormat + ItemCN.getItemCN(target), tooltip) + Color.WHITE, selector)).toString());
 
                 PluginChannelListener.getInstance().sendData(commandSender, resultTime, Phrase.LOOKUP_CONTAINER, selector, resultUser, target, resultAmount, x, y, z, worldId, rbFormat, true, tag.contains("+"));
             }
@@ -159,16 +157,16 @@ public class ChestTransactionLookup {
 
             if (found) {
                 if (count > limit) {
-                    Chat.sendComponent(commandSender, Color.WHITE + "-----");
-                    Chat.sendComponent(commandSender, ChatUtils.getPageNavigation(command, page, totalPages));
+                    result.add(Color.WHITE + "-----");
+                    result.add(ChatUtils.getPageNavigation(command, page, totalPages));
                 }
             }
             else {
                 if (rowMax > count && count > 0) {
-                    Chat.sendComponent(commandSender, Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + Phrase.build(Phrase.NO_RESULTS_PAGE, Selector.SECOND));
+                    result.add(Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + Phrase.build(Phrase.NO_RESULTS_PAGE, Selector.SECOND));
                 }
                 else {
-                    Chat.sendComponent(commandSender, Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + Phrase.build(Phrase.NO_DATA_LOCATION, Selector.SECOND));
+                    result.add(Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + Phrase.build(Phrase.NO_DATA_LOCATION, Selector.SECOND));
                 }
             }
 
@@ -180,7 +178,13 @@ public class ChestTransactionLookup {
             e.printStackTrace();
         }
 
-        return List.of();
+        for (Object data : result) {
+            if (data instanceof String) {
+                Chat.sendComponent(commandSender, (String) data);
+            } else if (data instanceof Component) {
+                commandSender.sendMessage((Component) data);
+            }
+        }
     }
 
 }

@@ -21,10 +21,7 @@ public class ContainerInspector extends BaseInspector {
 
                     try (Connection connection = getDatabaseConnection(player)) {
                         Statement statement = connection.createStatement();
-                        List<String> blockData = ChestTransactionLookup.performLookup(null, statement, finalLocation, player, 1, 7, false);
-                        for (String data : blockData) {
-                            Chat.sendComponent(player, data);
-                        }
+                        ChestTransactionLookup.performLookup(null, statement, finalLocation, player, 1, 7, false);
 
                         statement.close();
                     }

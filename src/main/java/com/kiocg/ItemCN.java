@@ -31,6 +31,7 @@ public class ItemCN {
 
         return itemCN.containsKey(string) ? itemCN.get(string) + (withEnglish ? "(" + string + ")" : "") : string;
     }
+
     public static @NotNull String getItemCN(@NotNull String string) {
         return getItemCN(string, true);
     }

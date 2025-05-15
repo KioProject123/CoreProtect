@@ -9,8 +9,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import it.unimi.dsi.fastutil.Pair;
-import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -376,15 +374,15 @@ public class ItemUtils {
     }
 
     // KioCG start
-    public static Pair<HoverEvent<HoverEvent.ShowItem>, ItemStack> getHoverEventWithItem(byte[] metadata, int type, int amount) {
+    public static ItemStack getRollbackItemStack(byte[] metadata, int type, int amount) {
         ItemStack item = new ItemStack(MaterialUtils.getType(type), amount);
 
         if (metadata == null) {
-            return Pair.of(item.asHoverEvent(), item);
+            return item;
         }
 
         item = (ItemStack) net.coreprotect.database.rollback.Rollback.populateItemStack(item, metadata)[2];
-        return Pair.of(item.asHoverEvent(), item);
+        return item;
     }
     // KioCG end
 
