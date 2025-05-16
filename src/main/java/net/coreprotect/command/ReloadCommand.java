@@ -44,8 +44,8 @@ public class ReloadCommand {
                         ConfigHandler.performInitialization(false);
                         Chat.sendMessage(player, Color.DARK_AQUA + "CoreProtect " + Color.WHITE + "- " + Phrase.build(Phrase.RELOAD_SUCCESS));
 
-                        Thread networkHandler = new Thread(new NetworkHandler(false, false));
-                        networkHandler.start();
+                        // Thread networkHandler = new Thread(new NetworkHandler(false, false));
+                        // networkHandler.start();
                     }
                     catch (Exception e) {
                         e.printStackTrace();

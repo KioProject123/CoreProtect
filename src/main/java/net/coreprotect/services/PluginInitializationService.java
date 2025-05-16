@@ -136,10 +136,10 @@ public class PluginInitializationService {
             Chat.console(Phrase.build(Phrase.USING_SQLITE));
         }
 
-        Chat.console("--------------------");
-        Chat.console(Phrase.build(Phrase.ENJOY_COREPROTECT, pluginDescription.getName()));
-        Chat.console(Phrase.build(Phrase.LINK_DISCORD, "www.coreprotect.net/discord/"));
-        Chat.console("--------------------");
+        // Chat.console("--------------------");
+        // Chat.console(Phrase.build(Phrase.ENJOY_COREPROTECT, pluginDescription.getName()));
+        // Chat.console(Phrase.build(Phrase.LINK_DISCORD, "www.coreprotect.net/discord/"));
+        // Chat.console("--------------------");
     }
 
     /**
@@ -150,15 +150,15 @@ public class PluginInitializationService {
      */
     private static void startBackgroundServices(CoreProtect plugin) {
         // Start network handler
-        Scheduler.scheduleSyncDelayedTask(plugin, () -> {
-            try {
-                Thread networkHandler = new Thread(new NetworkHandler(true, true));
-                networkHandler.start();
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-            }
-        }, 0);
+        // Scheduler.scheduleSyncDelayedTask(plugin, () -> {
+        //     try {
+        //         Thread networkHandler = new Thread(new NetworkHandler(true, true));
+        //         networkHandler.start();
+        //     }
+        //     catch (Exception e) {
+        //         e.printStackTrace();
+        //     }
+        // }, 0);
 
         // Start cache cleanup thread
         Thread cacheCleanUpThread = new Thread(new CacheHandler());
