@@ -5,6 +5,7 @@ import org.bukkit.block.Chest;
 import org.bukkit.block.Container;
 import org.bukkit.block.DoubleChest;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Tameable;
 import org.bukkit.persistence.PersistentDataHolder;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
@@ -22,6 +23,10 @@ public class OwnerUtils {
     }
 
     public static @Nullable UUID getOwner(final @NotNull PersistentDataHolder holder) {
+        //TODO CoreProtect未记录实体上的容器
+        if (holder instanceof Tameable) {
+            return ((Tameable) holder).getOwnerUniqueId();
+        }
         return holder.getPersistentDataContainer().get(ownerUUID, PersistentDataType.UUID);
     }
 
