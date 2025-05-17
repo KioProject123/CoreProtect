@@ -38,7 +38,7 @@ public class OwnerUtils {
         return holder.getPersistentDataContainer().getOrDefault(placeTime, PersistentDataType.LONG, 0L);
     }
 
-    public static @NotNull Chest getDoubleChestSide(final @NotNull DoubleChest doubleChest) {
+    public static @NotNull Chest getDoubleChestOwnerSide(final @NotNull DoubleChest doubleChest) {
         final Chest leftSide = Objects.requireNonNull((Chest) doubleChest.getLeftSide(false));
         final Chest rightSide = Objects.requireNonNull((Chest) doubleChest.getRightSide(false));
         if (leftSide.hasLootTable()) {

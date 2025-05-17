@@ -149,7 +149,7 @@ public final class PlayerInteractListener extends Queue implements Listener {
                             if (inventoryHolder instanceof DoubleChest) {
                                 DoubleChest doubleChest = (DoubleChest) inventoryHolder;
                                 location = doubleChest.getLocation();
-                                container000 = OwnerUtils.getDoubleChestSide(doubleChest); // KioCG
+                                container000 = OwnerUtils.getDoubleChestOwnerSide(doubleChest); // KioCG
                             }
                             else {
                                 location = chest.getLocation();
