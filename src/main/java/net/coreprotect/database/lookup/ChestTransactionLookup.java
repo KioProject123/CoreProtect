@@ -100,7 +100,7 @@ public class ChestTransactionLookup {
                 int resultAmount = results.getInt("amount");
                 int resultRolledBack = results.getInt("rolled_back");
                 byte[] resultMetadata = results.getBytes("metadata");
-                ItemStack rollbackItemStack = ItemUtils.getRollbackItemStack(resultMetadata, resultType, resultAmount);
+                ItemStack rollbackItemStack = ItemUtils.getRollbackItemStack(resultMetadata, resultType, 1);
 
                 if (ConfigHandler.playerIdCacheReversed.get(resultUserId) == null) {
                     UserStatement.loadName(statement.getConnection(), resultUserId);

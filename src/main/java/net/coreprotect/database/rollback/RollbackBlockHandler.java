@@ -325,6 +325,9 @@ public class RollbackBlockHandler extends Queue {
                 }
                 else if (BlockGroup.SHULKER_BOXES.contains(rowType)) {
                     BlockUtils.prepareTypeAndData(chunkChanges, block, rowType, blockData, false);
+                    if (rowData > 0) {
+                        ((org.bukkit.block.RowsContainer) block.getState(false)).setRows(rowData);
+                    }
                     if (countBlock) {
                         updateBlockCount(finalUserString, 1);
                     }
@@ -475,11 +478,22 @@ public class RollbackBlockHandler extends Queue {
                         ChestTool.updateDoubleChest(block, blockData, false);
                     }
 
+                    org.bukkit.block.BlockState blockState = block.getState(false);
+                    if (blockState instanceof org.bukkit.block.RowsContainer && rowData > 0) {
+                        ((org.bukkit.block.RowsContainer) blockState).setRows(rowData);
+                    }
+
                     return countBlock;
                 }
                 else if (BlockGroup.UPDATE_STATE.contains(rowType) || rowType.name().contains("CANDLE")) {
                     BlockUtils.prepareTypeAndData(chunkChanges, block, rowType, blockData, true);
                     ChestTool.updateDoubleChest(block, blockData, true);
+
+                    org.bukkit.block.BlockState blockState = block.getState(false);
+                    if (blockState instanceof org.bukkit.block.RowsContainer && rowData > 0) {
+                        ((org.bukkit.block.RowsContainer) blockState).setRows(rowData);
+                    }
+
                     return countBlock;
                 }
                 else if (rowType != Material.AIR && rawBlockData instanceof Bisected && !(rawBlockData instanceof Stairs || rawBlockData instanceof TrapDoor)) {

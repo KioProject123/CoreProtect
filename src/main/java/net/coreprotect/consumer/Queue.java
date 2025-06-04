@@ -104,6 +104,9 @@ public class Queue {
             CreatureSpawner mobSpawner = (CreatureSpawner) block;
             extraData = EntityUtils.getSpawnerType(mobSpawner.getSpawnedType());
         }
+        else if (block instanceof org.bukkit.block.RowsContainer) {
+            extraData = ((org.bukkit.block.RowsContainer) block).getRows();
+        }
         else if (type == Material.IRON_DOOR || BlockGroup.DOORS.contains(type) || type.equals(Material.SUNFLOWER) || type.equals(Material.LILAC) || type.equals(Material.TALL_GRASS) || type.equals(Material.LARGE_FERN) || type.equals(Material.ROSE_BUSH) || type.equals(Material.PEONY)) { // Double plant
             if (block.getBlockData() instanceof Bisected) {
                 if (((Bisected) block.getBlockData()).getHalf().equals(Half.TOP)) {
@@ -144,6 +147,10 @@ public class Queue {
         if (type == Material.SPAWNER && blockLocation instanceof CreatureSpawner) { // Mob spawner
             CreatureSpawner mobSpawner = (CreatureSpawner) blockLocation;
             data = EntityUtils.getSpawnerType(mobSpawner.getSpawnedType());
+            forceData = 1;
+        }
+        else if (blockLocation instanceof org.bukkit.block.RowsContainer) {
+            data = ((org.bukkit.block.RowsContainer) blockLocation).getRows();
             forceData = 1;
         }
 
